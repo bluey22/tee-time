@@ -1,20 +1,15 @@
 # tee-time
-A Java+SQL CLI tool for Golf Leagues and Membership Sharing
-
-## Getting Started
-
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+A Java + SQL CLI tool for Golf Leagues and Membership Sharing
 
 ## Folder Structure
 
 The workspace contains two folders by default, where:
 
-- `src`: the folder to maintain sources
+- `src`: source code for Java CLI
+- `sql`: source code for SQL
 - `lib`: the folder to maintain dependencies
 
 Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
 
 ## Dependency Management
 
