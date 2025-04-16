@@ -4,7 +4,7 @@
 -- DML: select, insert
 -- tables: team, team_player, facility
 -- @ben
-CREATE OR ALTER PROCEDURE JoinTeam
+CREATE OR ALTER PROCEDURE joinTeam
     @player_id INT,
     @team_id INT,
     @join_date DATE = NULL,
@@ -28,7 +28,7 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO team_player (player_id, team_id, join_date, position)
-        VALUES (@played_id, @team_id, @join_date, position);
+        VALUES (@player_id, @team_id, @join_date, @position);
 
         -- Return team details to the application
         SELECT
