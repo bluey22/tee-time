@@ -23,7 +23,7 @@ CREATE TABLE player (
     email VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
     age INT NOT NULL,
-    state VARCHAR(50) NOT NULL,
+    [state] VARCHAR(50) NOT NULL,
     city VARCHAR(50) NOT NULL,
     zip VARCHAR(20) NOT NULL,
     skill_level VARCHAR(20) NOT NULL CHECK (skill_level IN ('Complete Beginner', 'Beginner', 'Intermediate', 'Advanced', 'Professional')),
@@ -33,7 +33,7 @@ CREATE TABLE player (
 );
 
 CREATE NONCLUSTERED INDEX ix_player_location_skill
-ON player(state, city, skill_level);
+ON player([state], city, skill_level);
 
 
 -- --------------------- Facility Relation (2) -----------------------------
@@ -42,7 +42,7 @@ CREATE TABLE facility (
     name VARCHAR(50) NOT NULL CHECK (name IN ('TopGolf', 'Five Iron')),
     address VARCHAR(200) NOT NULL,
     city VARCHAR(50) NOT NULL,
-    state VARCHAR(50) NOT NULL,
+    [state] VARCHAR(50) NOT NULL,
     zip VARCHAR(20) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     website VARCHAR(200) NULL,
@@ -78,7 +78,7 @@ CREATE TABLE team_player (
 CREATE TABLE league (
     league_id INT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    state VARCHAR(50) NOT NULL,
+    [state] VARCHAR(50) NOT NULL,
     city VARCHAR(50) NOT NULL,
     zip VARCHAR(20) NOT NULL,
     skill_level VARCHAR(20) NOT NULL CHECK (skill_level IN ('Complete Beginner', 'Beginner', 'Intermediate', 'Advanced', 'Professional')),

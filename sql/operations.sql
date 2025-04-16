@@ -1,7 +1,59 @@
 -- For procedures, functions, triggers, and views
 
 -- ------------------------------ Use Case 1: Player Joins a Team ------------------------------------------
--- TODO
+-- DML: select, insert
+-- tables: team, team_player, facility
+-- @ben
+CREATE OR ALTER PROCEDURE JoinTeam
+    @player_id INT,
+    @team_id INT,
+    @join_date DATE = NULL,
+    @position VARCHAR(20) = 'Member'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Choose today if no join date is specified
+    IF @join_date IS NULL
+        SET @join_date = GETDATE();
+
+    BEGIN TRANSACTION;
+
+    -- Check if the team exists
+    IF NOT EXISTS (SELECT 1 FROM team WHERE team_id = @team_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END;
+
+    BEGIN TRY
+        INSERT INTO team_player (player_id, team_id, join_date, position)
+        VALUES (@played_id, @team_id, @join_date, position);
+
+        -- Return team details to the application
+        SELECT
+            t.team_id,
+            t.name,
+            t.creation_date,
+            t.home_facility_id,
+            CASE 
+                WHEN t.home_facility_id IS NULL THEN 'No home facility' 
+                ELSE f.name 
+            END AS facility_name
+        FROM team t
+        LEFT JOIN facility f on t.home_facility_id = f.facility_id
+        WHERE t.team_id = @team_id;
+
+        COMMIT TRANSACTION;
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END CATCH;
+END;
+GO
+
 
 -- ------------------------------- GENERAL PROCEDURES - Player Relation ------------------------------------
 CREATE OR ALTER PROCEDURE InsertPlayer
@@ -32,7 +84,7 @@ BEGIN
             email, 
             phone_number, 
             age, 
-            state, 
+            [state], 
             city, 
             zip, 
             skill_level, 
