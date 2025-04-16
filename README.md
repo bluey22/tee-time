@@ -18,6 +18,7 @@ cp src/utils/Credentials.java.template src/utils/Credentials.java
 # SERVER_NAME will look like "<server-name>\\<case-id>"
 ```
 
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+Setup the SQL database for testing:
+- Relations are defined in `tables.sql`
+- Procedures are defined in `operations.sql`
+- Mock data is defined in `dev_data.sql`
