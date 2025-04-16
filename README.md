@@ -15,6 +15,7 @@ Meanwhile, the compiled output files will be generated in the `bin` folder by de
 Populate your database connection credentials:
 ```bash
 cp src/utils/Credentials.java.template src/utils/Credentials.java
+# SERVER_NAME will look like "<server-name>\\<case-id>"
 ```
 
 ## Dependency Management
