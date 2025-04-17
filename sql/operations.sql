@@ -144,3 +144,50 @@ FROM facility f
          JOIN membership m ON f.facility_id = m.facility_id
 WHERE m.membership_id = @membership_id;
 END;
+
+-- ------------------------------ Use Case 13: Match Cancellation ------------------------------------------
+CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
+    @facility_id    INT,
+    @reason         VARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+
+    -- 1. Ensure the facility exists
+    IF NOT EXISTS (SELECT 1 FROM facility WHERE facility_id = @facility_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END;
+
+    BEGIN TRY
+        -- 2. Cancel all scheduled matches at this facility
+        UPDATE game
+        SET status = 'Cancelled'
+        WHERE facility_id = @facility_id
+          AND status = 'Scheduled';
+
+        -- 3. Return facility details + the reason
+        SELECT
+            f.facility_id,
+            f.name,
+            f.address,
+            f.city,
+            f.[state],
+            f.zip,
+            f.phone,
+            f.website,
+            @reason AS cancellation_reason
+        FROM facility f
+        WHERE f.facility_id = @facility_id;
+
+        COMMIT TRANSACTION;
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END CATCH;
+END;
+GO

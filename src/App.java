@@ -34,6 +34,7 @@ public class App {
                 System.out.println("--------- Menu ---------");
                 System.out.println("1. Join a Team");
                 System.out.println("2. Cancel a membership");
+                System.out.println("3. Cancel Matches at a Facility");
                 System.out.print("Enter your choice (input a number 1 through 6): ");
 
                 int choice = scanner.nextInt();
@@ -45,10 +46,14 @@ public class App {
                     case 2:
                         cancelMembership(connection, scanner);
                         break;
+                    case 3:
+                        cancelMatchesAtFacility(connection, scanner);
+                        break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
                         break;
                 }
+                
             }
 
         } catch (SQLException e) {
@@ -229,5 +234,72 @@ public class App {
             }
         }
     }
+    private static void cancelMatchesAtFacility(Connection connection, Scanner scanner) {
+        System.out.println("\n=== Cancel Matches at a Facility ===");
+        System.out.print("Enter the facility id (as an integer): ");
+        int facilityId;
+        try {
+            facilityId = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid facility id. Exiting...");
+            return;
+        }
+    
+        System.out.print("Enter reason for cancellation: ");
+        String reason = scanner.nextLine().trim();
+    
+        String callProc = "{? = call dbo.CancelMatchesAtFacility(?, ?)}";
+        try (CallableStatement stmt = connection.prepareCall(callProc)) {
+            connection.setAutoCommit(false);
+    
+            // register and set parameters
+            stmt.registerOutParameter(1, Types.INTEGER);
+            stmt.setInt(2, facilityId);
+            stmt.setString(3, reason);
+    
+            stmt.execute();
+            int returnCode = stmt.getInt(1);
+            if (returnCode == -1) {
+                System.out.println("Error: Facility not found or database error.");
+                connection.rollback();
+                return;
+            }
+    
+            // read and display the facility + reason
+            ResultSet rs = stmt.getResultSet();
+            if (rs != null && rs.next()) {
+                System.out.println("\nFacility cancellation details:");
+                System.out.println("Facility ID: " + rs.getInt("facility_id"));
+                System.out.println("Name:        " + rs.getString("name"));
+                System.out.println("Address:     " + rs.getString("address"));
+                System.out.println("City:        " + rs.getString("city"));
+                System.out.println("State:       " + rs.getString("state"));
+                System.out.println("ZIP:         " + rs.getString("zip"));
+                System.out.println("Phone:       " + rs.getString("phone"));
+                System.out.println("Website:     " + rs.getString("website"));
+                System.out.println("Reason:      " + rs.getString("cancellation_reason"));
+                System.out.println("\nAll scheduled matches at this facility have been cancelled.");
+            } else {
+                System.out.println("No facility information returned.");
+            }
+    
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+            try {
+                connection.rollback();
+                System.out.println("Transaction rolled back.");
+            } catch (SQLException ex) {
+                System.out.println("Rollback failed: " + ex.getMessage());
+            }
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                System.out.println("Failed to reset auto-commit: " + e.getMessage());
+            }
+        }
+    }
+    
 
 }
