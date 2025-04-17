@@ -35,6 +35,7 @@ public class App {
                 System.out.println("1. Join a Team");
                 System.out.println("2. Cancel a membership");
                 System.out.println("3. Cancel Matches at a Facility");
+                System.out.println("4. Create a Home League at a Facility (Adds all home teams)");
                 System.out.print("Enter your choice (input a number 1 through 6): ");
 
                 int choice = scanner.nextInt();
@@ -48,6 +49,9 @@ public class App {
                         break;
                     case 3:
                         cancelMatchesAtFacility(connection, scanner);
+                        break;
+                    case 4:
+                        createFacilityLeague(connection, scanner);
                         break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
@@ -123,7 +127,6 @@ public class App {
             // Process potential result sets
             if (hasResults) {
                 try (ResultSet rs = prepStoredProc.getResultSet()) {
-                    System.out.println(rs);
                     if (rs.next()) {
                         System.out.println("\n=== Team Details ===");
                         System.out.println("Team ID:            " + rs.getInt("team_id"));
@@ -153,6 +156,7 @@ public class App {
         }
     }
 
+    // Use case 2:
     private static void cancelMembership(Connection connection, Scanner scanner) {
         try {
             // Start transaction
@@ -228,6 +232,8 @@ public class App {
             }
         }
     }
+
+    // Use Case 3
     private static void cancelMatchesAtFacility(Connection connection, Scanner scanner) {
         System.out.println("\n=== Cancel Matches at a Facility ===");
         System.out.print("Enter the facility id (as an integer): ");
@@ -295,5 +301,120 @@ public class App {
         }
     }
     
+    // Use case 4:
+    private static void createFacilityLeague(Connection connection, Scanner scanner) {
+        System.out.println("\n=== Create Facility League ===");
+        String callStoredProc = "{call RegisterTeamsFromFacilityToLeague(?,?,?,?,?,?,?)}";
+        int facilityId;
+        String leagueName, skillLevel, startDate, endDate, leagueFormat;
+        int maxTeams;
 
+        // 1. Prompt the user for information
+        try {
+            System.out.println("Enter the facility ID (as an integer), then press enter:");
+            facilityId = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter the league name, then press enter:");
+            leagueName = scanner.nextLine().trim();
+
+            System.out.println("Enter skill level (Complete Beginner, Beginner, Intermediate, Advanced, Professional):");
+            skillLevel = scanner.nextLine().trim();
+
+            System.out.print("Enter start date (YYYY-MM-DD): ");
+            startDate = scanner.nextLine().trim();
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                dateFormat.setLenient(false);
+                dateFormat.parse(startDate);
+            } catch (ParseException e) {
+                System.out.println("Invalid date format. Please try again.");
+                return;
+            }
+
+            System.out.print("Enter end date (YYYY-MM-DD): ");
+            endDate = scanner.nextLine().trim();
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                dateFormat.setLenient(false);
+                dateFormat.parse(endDate);
+            } catch (ParseException e) {
+                System.out.println("Invalid date format. Please try again.");
+                return;
+            }
+
+            System.out.println("Enter maximum number of teams:");
+            maxTeams = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter league format (Round Robin, Elimination, RR-E):");
+            leagueFormat = scanner.nextLine().trim();
+            
+        } catch (Exception e) {
+            System.out.println("Invalid input given, please try again. Exiting...");
+            return;
+        }
+
+        // 2. Run stored procedure with input
+        try (CallableStatement prepStoredProc = connection.prepareCall(callStoredProc)) {
+            connection.setAutoCommit(false);
+
+            // Set input parameters
+            prepStoredProc.setInt(1, facilityId);
+            prepStoredProc.setString(2, leagueName);
+            prepStoredProc.setString(3, skillLevel);
+            prepStoredProc.setDate(4, Date.valueOf(startDate));
+            prepStoredProc.setDate(5, Date.valueOf(endDate));
+            prepStoredProc.setInt(6, maxTeams);
+            prepStoredProc.setString(7, leagueFormat);
+
+            // Execute the stored procedure
+            boolean hasResults = prepStoredProc.execute();
+
+            // Process potential result sets
+            while (hasResults) {
+                try (ResultSet rs = prepStoredProc.getResultSet()) {
+                    ResultSetMetaData metaData = rs.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+                    
+                    System.out.println("\n=== Teams Registered to the New League ===");
+                    
+                    // Print column headers
+                    for (int i = 1; i <= columnCount; i++) {
+                        System.out.printf("%-20s", metaData.getColumnName(i));
+                    }
+                    System.out.println();
+                    
+                    // Print separator
+                    for (int i = 1; i <= columnCount; i++) {
+                        System.out.print("--------------------");
+                    }
+                    System.out.println();
+                    
+                    // Print data rows
+                    while (rs.next()) {
+                        for (int i = 1; i <= columnCount; i++) {
+                            System.out.printf("%-20s", rs.getString(i));
+                        }
+                        System.out.println();
+                    }
+                    
+                    System.out.println("\nNew league created and teams registered successfully!");
+                }
+                
+                hasResults = prepStoredProc.getMoreResults();
+            }
+    
+            // 4. Commit the transaction
+            connection.commit();
+
+        } catch (SQLException e) {
+            // 5. Handle Errors
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                System.out.println("Error rolling back transaction: " + rollbackEx.getMessage());
+            }
+            System.out.println("Database error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
