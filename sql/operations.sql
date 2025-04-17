@@ -9,7 +9,7 @@ CREATE OR ALTER PROCEDURE joinTeam
     @team_id INT,
     @join_date DATE = NULL,
     @position VARCHAR(20) = 'Member'
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
 
@@ -17,40 +17,40 @@ BEGIN
     IF @join_date IS NULL
         SET @join_date = GETDATE();
 
-    BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
     -- Check if the team exists
     IF NOT EXISTS (SELECT 1 FROM team WHERE team_id = @team_id)
-    BEGIN
-        ROLLBACK TRANSACTION;
-        RETURN -1;
-    END;
+BEGIN
+ROLLBACK TRANSACTION;
+RETURN -1;
+END;
 
-    BEGIN TRY
-        INSERT INTO team_player (player_id, team_id, join_date, position)
+BEGIN TRY
+INSERT INTO team_player (player_id, team_id, join_date, position)
         VALUES (@player_id, @team_id, @join_date, @position);
 
         -- Return team details to the application
-        SELECT
-            t.team_id,
-            t.name,
-            t.creation_date,
-            t.home_facility_id,
-            CASE 
-                WHEN t.home_facility_id IS NULL THEN 'No home facility' 
-                ELSE f.name 
-            END AS facility_name
-        FROM team t
-        LEFT JOIN facility f on t.home_facility_id = f.facility_id
-        WHERE t.team_id = @team_id;
+SELECT
+    t.team_id,
+    t.name,
+    t.creation_date,
+    t.home_facility_id,
+    CASE
+        WHEN t.home_facility_id IS NULL THEN 'No home facility'
+        ELSE f.name
+        END AS facility_name
+FROM team t
+         LEFT JOIN facility f on t.home_facility_id = f.facility_id
+WHERE t.team_id = @team_id;
 
-        COMMIT TRANSACTION;
-        RETURN 0;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        RETURN -1;
-    END CATCH;
+COMMIT TRANSACTION;
+RETURN 0;
+END TRY
+BEGIN CATCH
+ROLLBACK TRANSACTION;
+RETURN -1;
+END CATCH;
 END;
 GO
 
@@ -70,15 +70,15 @@ CREATE OR ALTER PROCEDURE InsertPlayer
     @join_date DATE,
     @profile_type VARCHAR(10),
     @player_id INT OUTPUT
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
-    BEGIN TRANSACTION;
+BEGIN TRANSACTION;
     
     SAVE TRANSACTION BeforeChanges;
-    
-    BEGIN TRY
-        INSERT INTO player (
+
+BEGIN TRY
+INSERT INTO player (
             first_name, 
             last_name, 
             email, 
@@ -108,14 +108,39 @@ BEGIN
         );
         
         SET @player_id = SCOPE_IDENTITY();
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION BeforeChanges;
-        RETURN -1;
-    END CATCH;
+RETURN -1;
+END CATCH;
 END;
 GO
 
+-- Cancelling a player membership
 
+CREATE PROCEDURE CancelPlayerMembership
+    @player_id INT,
+    @membership_id INT
+AS
+BEGIN
+    -- Step 1: Update payment status to 'Cancelled'
+UPDATE player_membership
+SET payment_status = 'Cancelled'
+WHERE player_id = @player_id AND membership_id = @membership_id;
+
+-- Step 2: Select related facility details for the cancelled membership
+SELECT
+    f.facility_id,
+    f.name AS facility_name,
+    f.address,
+    f.city,
+    f.state,
+    f.zip,
+    f.phone,
+    f.website
+FROM facility f
+         JOIN membership m ON f.facility_id = m.facility_id
+WHERE m.membership_id = @membership_id;
+END;
