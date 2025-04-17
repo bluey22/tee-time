@@ -62,8 +62,7 @@ BEGIN
     END;
 END;
 
--- Cancelling a player membership
-
+-- -------------------- Use Case 2: Cancelling a player membership ------------------------------
 CREATE PROCEDURE CancelPlayerMembership
     @player_id INT,
     @membership_id INT
@@ -89,7 +88,7 @@ FROM facility f
 WHERE m.membership_id = @membership_id;
 END;
 
--- ------------------------------ Use Case 13: Match Cancellation ------------------------------------------
+-- --------------------- Use Case 3: Match Cancellation (Case #13 in doc2) --------------------------------
 CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
     @facility_id    INT,
     @reason         VARCHAR(500)
@@ -135,3 +134,98 @@ BEGIN
     END CATCH;
 END;
 GO
+
+-- ------------------------------ Use Case 4: Golf Facility wants to start a league ------------------------------------------
+-- DML: select, insert, update
+-- tables: team, league_team, league, facility
+-- @ben
+CREATE OR ALTER PROCEDURE CreateFacilityLeague
+    @FacilityId INT,
+    @LeagueName VARCHAR(100),
+    @SkillLevel VARCHAR(20),
+    @StartDate DATE,
+    @EndDate DATE,
+    @MaxTeams INT,
+    @LeagueFormat VARCHAR(20)
+AS
+BEGIN
+SET NOCOUNT ON;
+    
+    DECLARE @LeagueId INT;
+    DECLARE @TeamCount INT;
+    DECLARE @State VARCHAR(50);
+    DECLARE @City VARCHAR(50);
+    DECLARE @Zip VARCHAR(20);
+
+    -- Get facility location information to set as league information
+    SELECT @State = [state], @City = city, @Zip = zip
+    FROM facility
+    WHERE facility_id = @FacilityId;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        RAISERROR('Facility ID %d not found.', 16, 1, @FacilityId);
+        RETURN;
+    END
+    
+    -- Check if there are teams with this facility as home
+    SELECT @TeamCount = COUNT(*) 
+    FROM team 
+    WHERE home_facility_id = @FacilityId;
+    
+    IF @TeamCount = 0
+    BEGIN
+        RAISERROR('No teams found with this facility as home base.', 16, 1);
+        RETURN;
+    END
+    
+    IF @TeamCount > @MaxTeams
+    BEGIN
+        RAISERROR('There are more teams (%d) than the maximum allowed (%d) for the league.', 16, 1, @TeamCount, @MaxTeams);
+        RETURN;
+    END
+    
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        -- 1. INSERT: Create the new league
+        INSERT INTO league (name, state, city, zip, skill_level, status, start_date, end_date, max_teams, league_format)
+        VALUES (@LeagueName, @State, @City, @Zip, @SkillLevel, 'Setting Up', @StartDate, @EndDate, @MaxTeams, @LeagueFormat);
+        
+        -- Get the new league ID
+        SET @LeagueId = SCOPE_IDENTITY();
+        
+        -- 2. INSERT: Register all teams from the facility into the league
+        INSERT INTO league_team (league_id, team_id, join_date)
+        SELECT @LeagueId, team_id, GETDATE()
+        FROM team
+        WHERE home_facility_id = @FacilityId;
+
+        -- 3. UPDATE: Update the league status to indicate it's ready
+        UPDATE league
+        SET status = 'In Season'
+        WHERE league_id = @LeagueId;
+        
+        -- 4. SELECT: Return information about the registered teams
+        SELECT 
+            l.league_id, 
+            l.name AS league_name, 
+            t.team_id, 
+            t.name AS team_name,
+            f.name AS facility_name,
+            lt.join_date
+        FROM league l
+        JOIN league_team lt ON l.league_id = lt.league_id
+        JOIN team t ON lt.team_id = t.team_id
+        JOIN facility f ON t.home_facility_id = f.facility_id
+        WHERE l.league_id = @LeagueId;
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+            
+        THROW;
+    END CATCH;
+END
