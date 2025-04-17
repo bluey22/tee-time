@@ -108,7 +108,8 @@ public class App {
             if (inpJoinDate.isEmpty()) {
                 prepStoredProc.setNull(4, Types.DATE);
             } else {
-                prepStoredProc.setString(4, inpJoinDate);
+                Date sqlDate = Date.valueOf(inpJoinDate);
+                prepStoredProc.setDate(4, sqlDate);
             }
 
             if (inpPosition.isEmpty()) {
@@ -130,8 +131,9 @@ public class App {
             }
 
             // Process result set
-            ResultSet resultSet = prepStoredProc.getResultSet();
+            ResultSet resultSet = prepStoredProc.getMoreResults();
             if (resultSet != null) {
+                ResultSet resultSet = prepStoredProc.getResultSet();
                 if (resultSet.next()) {
                     System.out.println("\n=== Team Details ===");
                     System.out.println("Team ID: " + resultSet.getInt("team_id"));

@@ -4,7 +4,14 @@
 EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'
 EXEC sp_MSforeachtable 'DELETE FROM ?'
 EXEC sp_MSforeachtable 'ALTER TABLE ? CHECK CONSTRAINT ALL'
-EXEC sp_MSforeachtable 'DBCC CHECKIDENT (''?'', RESEED, 0)'
+
+-- Reset identity columns (only for tables that have them)
+DBCC CHECKIDENT ('player', RESEED, 0)
+DBCC CHECKIDENT ('facility', RESEED, 0)
+DBCC CHECKIDENT ('team', RESEED, 0)
+DBCC CHECKIDENT ('league', RESEED, 0)
+DBCC CHECKIDENT ('membership', RESEED, 0)
+DBCC CHECKIDENT ('game', RESEED, 0)
 
 -- Create facilities (1 TopGolf, 1 Five Iron in Cleveland)
 INSERT INTO facility (name, address, city, state, zip, phone, website, opening_time, closing_time, number_of_bays)

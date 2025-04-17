@@ -17,40 +17,55 @@ BEGIN
     IF @join_date IS NULL
         SET @join_date = GETDATE();
 
-BEGIN TRANSACTION;
+    BEGIN TRANSACTION;
 
     -- Check if the team exists
     IF NOT EXISTS (SELECT 1 FROM team WHERE team_id = @team_id)
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN -1;
-END;
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END;
 
-BEGIN TRY
-INSERT INTO team_player (player_id, team_id, join_date, position)
-        VALUES (@player_id, @team_id, @join_date, @position);
+    -- Check if the player exists
+    IF NOT EXISTS (SELECT 1 FROM player WHERE player_id = @player_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END;
+
+    -- Check if the player is already on the team
+    IF EXISTS (SELECT 1 FROM team_player WHERE player_id = @player_id AND team_id = @team_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END;
+
+    BEGIN TRY
+        INSERT INTO team_player (player_id, team_id, join_date, position)
+                VALUES (@player_id, @team_id, @join_date, @position);
 
         -- Return team details to the application
-SELECT
-    t.team_id,
-    t.name,
-    t.creation_date,
-    t.home_facility_id,
-    CASE
-        WHEN t.home_facility_id IS NULL THEN 'No home facility'
-        ELSE f.name
-        END AS facility_name
-FROM team t
-         LEFT JOIN facility f on t.home_facility_id = f.facility_id
-WHERE t.team_id = @team_id;
+        SELECT
+            t.team_id,
+            t.name,
+            t.creation_date,
+            t.home_facility_id,
+            CASE
+                WHEN t.home_facility_id IS NULL THEN 'No home facility'
+                ELSE f.name
+                END AS facility_name
+        FROM team t
+                LEFT JOIN facility f on t.home_facility_id = f.facility_id
+        WHERE t.team_id = @team_id;
 
-COMMIT TRANSACTION;
-RETURN 0;
-END TRY
-BEGIN CATCH
-ROLLBACK TRANSACTION;
-RETURN -1;
-END CATCH;
+        COMMIT TRANSACTION;
+        RETURN 0;
+    END TRY
+
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        RETURN -1;
+    END CATCH;
 END;
 GO
 
