@@ -64,7 +64,7 @@ public class App {
     // Use Case 1: Join a Team
     private static void joinTeam(Connection connection, Scanner scanner) {
         System.out.println("\n=== Join Team ===");
-        String callStoredProc = "{? = call dbo.joinTeam(?,?,?,?)}";
+        String callStoredProc = "{call dbo.joinTeam(?,?,?,?)}";
         int inpPlayerId, inpTeamId;
         String inpJoinDate, inpPosition;
 
@@ -101,70 +101,45 @@ public class App {
             connection.setAutoCommit(false);
 
             // Set input parameters
-            prepStoredProc.registerOutParameter(1, Types.INTEGER);
-            prepStoredProc.setInt(2, inpPlayerId);
-            prepStoredProc.setInt(3, inpTeamId);
+            prepStoredProc.setInt(1, inpPlayerId);
+            prepStoredProc.setInt(2, inpTeamId);
 
             if (inpJoinDate.isEmpty()) {
-                prepStoredProc.setDate(4, null);
+                prepStoredProc.setDate(3, null);
             } else {
                 Date sqlDate = Date.valueOf(inpJoinDate);
-                prepStoredProc.setDate(4, sqlDate);
+                prepStoredProc.setDate(3, sqlDate);
             }
 
             if (inpPosition.isEmpty()) {
-                prepStoredProc.setString(5, "Member");
+                prepStoredProc.setString(4, "Member");
             } else {
-                prepStoredProc.setString(5, inpPosition);
+                prepStoredProc.setString(4, inpPosition);
             }
 
             // Execute the stored procedure
             boolean hasResults = prepStoredProc.execute();
-            int returnValue = prepStoredProc.getInt(1);
-
-            // Handle return value
-            if (returnValue == -1) {
-                System.out.println("Error: Operation failed. Team or Player may not exist (or already exist).");
-                connection.rollback();
-                return;
-            }
 
             // Process potential result sets
-            ResultSet rs = null;
-            do {
-                // If we have results, process them
-                if (hasResults) {
-                    rs = prepStoredProc.getResultSet();
-                    if (rs != null) {
-                        if (rs.next()) {
-                            System.out.println("\n=== Team Details ===");
-                            System.out.println("Team ID:            " + rs.getInt("team_id"));
-                            System.out.println("Team Name:          " + rs.getString("name"));
-                            System.out.println("Creation Date:      " + rs.getDate("creation_date"));
-                            System.out.println("Home Facility ID:   " + rs.getInt("home_facility_id"));
-                            System.out.println("Facility Name:      " + rs.getString("facility_name"));
-                            System.out.println("\nPlayer successfully joined the team!");
-                        }
-                        rs.close();
-                    }
-                } else {
-                    // No result set, check if there was an update count
-                    int updateCount = prepStoredProc.getUpdateCount();
-                    if (updateCount == -1) {
-                        // No more results
-                        break;
+            if (hasResults) {
+                try (ResultSet rs = prepStoredProc.getResultSet()) {
+                    System.out.println(rs);
+                    if (rs.next()) {
+                        System.out.println("\n=== Team Details ===");
+                        System.out.println("Team ID:            " + rs.getInt("team_id"));
+                        System.out.println("Team Name:          " + rs.getString("name"));
+                        System.out.println("Creation Date:      " + rs.getDate("creation_date"));
+                        System.out.println("Home Facility ID:   " + rs.getInt("home_facility_id"));
+                        System.out.println("Facility Name:      " + rs.getString("facility_name"));
+                        System.out.println("\nPlayer #"+ inpPlayerId+" successfully joined the team!");
+                    } else {
+                        System.out.println("No results returned.");
                     }
                 }
-                
-                // Move to the next result (if any)
-                hasResults = prepStoredProc.getMoreResults();
-            } while (true);
-
-            // If we never found a result set
-            if (rs == null) {
-                System.out.println("Player successfully joined the team, but team details could not be retrieved.");
+            } else {
+                System.out.println("No result set was returned.");
             }
-
+    
             // Commit the transaction
             connection.commit();
         } catch (SQLException e) {
