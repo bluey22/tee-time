@@ -119,7 +119,7 @@ public class App {
             }
 
             // Execute the stored procedure
-            boolean hasResultSet = prepStoredProc.execute();
+            boolean hasResults = prepStoredProc.execute();
             int returnValue = prepStoredProc.getInt(1);
 
             // Handle return value
