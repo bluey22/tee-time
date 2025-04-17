@@ -12,6 +12,7 @@ CREATE OR ALTER PROCEDURE joinTeam
     AS
 BEGIN
     SET NOCOUNT ON;
+    DECLARE @return_value INT = 0;
 
     -- Choose today if no join date is specified
     IF @join_date IS NULL
@@ -59,7 +60,7 @@ BEGIN
         WHERE t.team_id = @team_id;
 
         COMMIT TRANSACTION;
-        RETURN 0;
+        RETURN @return_value;
     END TRY
 
     BEGIN CATCH
