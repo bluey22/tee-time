@@ -12,19 +12,19 @@ CREATE OR ALTER PROCEDURE joinTeam
     AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     -- Choose today if no join date is specified
     IF @join_date IS NULL
         SET @join_date = GETDATE();
-    
+
     -- Check if the team exists
     IF NOT EXISTS (SELECT 1 FROM team WHERE team_id = @team_id)
         RAISERROR('Team does not exist', 16, 1);
-    
+
     -- Check if the player exists
 ELSE IF NOT EXISTS (SELECT 1 FROM player WHERE player_id = @player_id)
         RAISERROR('Player does not exist', 16, 1);
-    
+
     -- Check if the player is already on the team
 ELSE IF EXISTS (SELECT 1 FROM team_player WHERE player_id = @player_id AND team_id = @team_id)
         RAISERROR('Player is already on this team', 16, 1);
@@ -56,7 +56,7 @@ END TRY
 BEGIN CATCH
 IF @@TRANCOUNT > 0
                 ROLLBACK TRANSACTION;
-            
+
             THROW;
 END CATCH;
 END;
@@ -152,7 +152,7 @@ CREATE OR ALTER PROCEDURE CreateFacilityLeague
     AS
 BEGIN
 SET NOCOUNT ON;
-    
+
     DECLARE @LeagueId INT;
     DECLARE @TeamCount INT;
     DECLARE @State VARCHAR(50);
@@ -169,7 +169,7 @@ BEGIN
         RAISERROR('Facility ID %d not found.', 16, 1, @FacilityId);
         RETURN;
 END
-    
+
     -- Check if there are teams with this facility as home
 SELECT @TeamCount = COUNT(*)
 FROM team
@@ -180,7 +180,7 @@ BEGIN
         RAISERROR('No teams found with this facility as home base.', 16, 1);
         RETURN;
 END
-    
+
     IF @TeamCount > @MaxTeams
 BEGIN
         RAISERROR('There are more teams (%d) than the maximum allowed (%d) for the league.', 16, 1, @TeamCount, @MaxTeams);
@@ -193,10 +193,10 @@ BEGIN TRY
         -- 1. INSERT: Create the new league
 INSERT INTO league (name, state, city, zip, skill_level, status, start_date, end_date, max_teams, league_format)
         VALUES (@LeagueName, @State, @City, @Zip, @SkillLevel, 'Setting Up', @StartDate, @EndDate, @MaxTeams, @LeagueFormat);
-        
+
         -- Get the new league ID
         SET @LeagueId = SCOPE_IDENTITY();
-        
+
         -- 2. INSERT: Register all teams from the facility into the league
 INSERT INTO league_team (league_id, team_id, join_date)
 SELECT @LeagueId, team_id, GETDATE()
@@ -227,8 +227,134 @@ END TRY
 BEGIN CATCH
 IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
-            
+
         THROW;
 END CATCH;
 END
+GO
+
+-- --------------------- Use Case: Update Player Handicap -----------------------------
+-- DML: select, update
+-- tables: game_team, team_player, player
+CREATE OR ALTER PROCEDURE UpdatePlayerHandicap
+    @player_id INT
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Variables for calculation
+    DECLARE @avg_score DECIMAL(5,2);
+    DECLARE @new_handicap DECIMAL(4,1);
+
+    -- Check if player exists
+    IF NOT EXISTS (SELECT 1 FROM player WHERE player_id = @player_id)
+BEGIN
+        RAISERROR('Player does not exist', 16, 1);
+        RETURN;
+END
+
+BEGIN TRY
+BEGIN TRANSACTION;
+
+        -- Calculate average score from recent matches
+        -- Retrieves scores from matches the player participated in through their teams
+SELECT @avg_score = AVG(CAST(gt.score AS DECIMAL(5,2)))
+FROM game_team gt
+         JOIN team_player tp ON gt.team_id = tp.team_id
+         JOIN game g ON gt.game_id = g.game_id
+WHERE tp.player_id = @player_id
+  AND g.status = 'Completed'
+  AND g.date_time >= DATEADD(MONTH, -3, GETDATE()); -- Only use matches from last 3 months
+
+-- If no matches found, don't update handicap
+IF @avg_score IS NULL
+BEGIN
+SELECT
+    p.player_id,
+    p.first_name,
+    p.last_name,
+    p.handicap,
+    'No recent matches found' AS update_status
+FROM player p
+WHERE p.player_id = @player_id;
+
+COMMIT TRANSACTION;
+RETURN;
+END
+
+        -- Calculate new handicap (basic formula: avg_score - 72)
+        -- Using 72 as a standard par score, adjust as needed
+        SET @new_handicap = @avg_score - 72.0;
+
+        -- Update player's handicap
+UPDATE player
+SET handicap = @new_handicap
+WHERE player_id = @player_id;
+
+-- Return updated player information
+SELECT
+    p.player_id,
+    p.first_name,
+    p.last_name,
+    p.handicap AS new_handicap,
+    @avg_score AS average_score,
+    'Handicap updated successfully' AS update_status
+FROM player p
+WHERE p.player_id = @player_id;
+
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @error_severity INT = ERROR_SEVERITY();
+        DECLARE @error_state INT = ERROR_STATE();
+
+        RAISERROR(@error_message, @error_severity, @error_state);
+END CATCH;
+END;
+GO
+
+-- --------------------- Trigger to Update Handicap After Match Score Changes -----------------------------
+CREATE OR ALTER TRIGGER AutoUpdateHandicapAfterMatch
+ON game_team
+AFTER INSERT, UPDATE
+                                  AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Only process if score was updated
+    IF UPDATE(score)
+BEGIN
+        -- Temporary table to hold players that need handicap updates
+        DECLARE @players_to_update TABLE (player_id INT);
+
+        -- Find all players on teams that had scores updated
+INSERT INTO @players_to_update
+SELECT DISTINCT tp.player_id
+FROM inserted i
+         JOIN team_player tp ON i.team_id = tp.team_id
+         JOIN game g ON i.game_id = g.game_id
+WHERE g.status = 'Completed';
+
+-- Update handicap for each player
+DECLARE @player_id INT;
+        DECLARE player_cursor CURSOR FOR
+SELECT player_id FROM @players_to_update;
+
+OPEN player_cursor;
+FETCH NEXT FROM player_cursor INTO @player_id;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+EXEC UpdatePlayerHandicap @player_id;
+FETCH NEXT FROM player_cursor INTO @player_id;
+END
+
+CLOSE player_cursor;
+DEALLOCATE player_cursor;
+END
+END;
 GO
