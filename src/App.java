@@ -305,9 +305,10 @@ public class App {
     
     // Use case 4:
     // - e.g., Register everyone at Top Golf (1) to an Advanced league starting now, ending 2025-07-31, RR
+    // - called "TopGolf (CLE) Only Summer League"
     private static void createFacilityLeague(Connection connection, Scanner scanner) {
         System.out.println("\n=== Create Facility League ===");
-        String callStoredProc = "{call RegisterTeamsFromFacilityToLeague(?,?,?,?,?,?,?)}";
+        String callStoredProc = "{call CreateFacilityLeague(?,?,?,?,?,?,?)}";
         int facilityId;
         String leagueName, skillLevel, startDate, endDate, leagueFormat;
         int maxTeams;
@@ -382,20 +383,20 @@ public class App {
                     
                     // Print column headers
                     for (int i = 1; i <= columnCount; i++) {
-                        System.out.printf("%-20s", metaData.getColumnName(i));
+                        System.out.printf("%-30s", metaData.getColumnName(i));
                     }
                     System.out.println();
                     
                     // Print separator
                     for (int i = 1; i <= columnCount; i++) {
-                        System.out.print("--------------------");
+                        System.out.print("------------------------------");
                     }
                     System.out.println();
                     
                     // Print data rows
                     while (rs.next()) {
                         for (int i = 1; i <= columnCount; i++) {
-                            System.out.printf("%-20s", rs.getString(i));
+                            System.out.printf("%-30s", rs.getString(i));
                         }
                         System.out.println();
                     }

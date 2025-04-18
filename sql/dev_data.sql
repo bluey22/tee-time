@@ -35,7 +35,7 @@ VALUES
 ('Ben', 'Luo', 'ben.luo@email.com', '216-333-3333', 35, 'Ohio', 'Shaker Heights', '44120', 'Advanced', 8.7, '2023-03-10', 'Hidden'),
 ('Timothy', 'Cronin', 'timothy.cronin@email.com', '216-444-4444', 42, 'Ohio', 'Lakewood', '44107', 'Intermediate', 15.2, '2023-04-05', 'Public'),
 ('Pranav', 'Balabhadra', 'pranav.balabhadra@email.com', '216-555-5555', 31, 'Ohio', 'Cleveland', '44114', 'Beginner', 20.1, '2023-05-12', 'Public'),
-('Tiger', 'Woods', 'tiger.woods@email.com', '216-666-6666', 49, 'Ohio', 'Cleveland', '44113', 'Professional', 0.0, '2023-06-15', 'Hidden');
+('Tiger', 'Woods', 'tiger.woods@email.com', '216-666-6666', 49, 'Ohio', 'Cleveland', '44113', 'Professional', 0.0, '2023-06-15', 'Hidden'),
 ('Rory', 'McIlroy', 'rory.mcilroy@email.com', '216-777-7777', 36, 'Ohio', 'Cleveland', '44131', 'Professional', 0.2, '2023-12-10', 'Public'),
 ('Min Woo', 'Lee', 'minwoo.lee@email.com', '216-888-8888', 27, 'Ohio', 'Cleveland', '44131', 'Advanced', 3.4, '2024-01-15', 'Public'),
 ('LeBron', 'James', 'lebron.james@email.com', '216-999-9999', 40, 'Ohio', 'Akron', '44308', 'Intermediate', 14.8, '2024-02-20', 'Public');
@@ -46,7 +46,7 @@ VALUES
 (1, 1, '2023-01-20', '2024-01-20', 'Completed'), -- Dorian has TopGolf Platinum
 (2, 2, '2023-02-25', '2024-02-25', 'Completed'), -- William has TopGolf Gold
 (3, 3, '2023-03-15', '2024-03-15', 'Completed'), -- Ben has Five Iron Elite
-(4, 4, '2023-04-10', '2024-04-10', 'Completed'); -- Tim has Five Iron Basic
+(4, 4, '2023-04-10', '2024-04-10', 'Completed'), -- Tim has Five Iron Basic
 (7, 1, '2023-12-15', '2024-12-15', 'Completed'), -- Rory has TopGolf Platinum
 (8, 1, '2024-01-20', '2025-01-20', 'Completed'), -- Min Woo has TopGolf Platinum
 (9, 2, '2024-02-25', '2025-02-25', 'Completed'); -- LeBron has TopGolf Gold
@@ -55,7 +55,7 @@ VALUES
 INSERT INTO team (name, creation_date, home_facility_id)
 VALUES
 ('Birdie Bandits', '2023-07-01', 1), -- Home at TopGolf
-('Holy Strokes', '2023-07-15', 2);   -- Home at Five Iron
+('Holy Strokes', '2023-07-15', 2),   -- Home at Five Iron
 ('Drive Dynasty', '2024-01-05', 1),  -- Home at TopGolf
 ('Eagle Elites', '2024-02-10', 1);   -- Home at TopGolf
 
@@ -69,7 +69,7 @@ VALUES
 (1, 1, '2023-07-01', 'Captain'),
 (2, 1, '2023-07-05', 'Member'), 
 (3, 2, '2023-07-15', 'Captain'),
-(4, 2, '2023-07-20', 'Member');
+(4, 2, '2023-07-20', 'Member'),
 (9, 4, '2024-02-10', 'Captain'),
 (6, 4, '2024-02-15', 'Member');
 
