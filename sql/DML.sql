@@ -9,7 +9,7 @@ CREATE OR ALTER PROCEDURE joinTeam
     @team_id INT,
     @join_date DATE = NULL,
     @position VARCHAR(20) = 'Member'
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
     
@@ -22,44 +22,44 @@ BEGIN
         RAISERROR('Team does not exist', 16, 1);
     
     -- Check if the player exists
-    ELSE IF NOT EXISTS (SELECT 1 FROM player WHERE player_id = @player_id)
+ELSE IF NOT EXISTS (SELECT 1 FROM player WHERE player_id = @player_id)
         RAISERROR('Player does not exist', 16, 1);
     
     -- Check if the player is already on the team
-    ELSE IF EXISTS (SELECT 1 FROM team_player WHERE player_id = @player_id AND team_id = @team_id)
+ELSE IF EXISTS (SELECT 1 FROM team_player WHERE player_id = @player_id AND team_id = @team_id)
         RAISERROR('Player is already on this team', 16, 1);
-    
-    ELSE
-    BEGIN
-        BEGIN TRY
-            BEGIN TRANSACTION;
-            
-            INSERT INTO team_player (player_id, team_id, join_date, position)
-            VALUES (@player_id, @team_id, @join_date, @position);
-            
-            COMMIT TRANSACTION;
-            
-            -- Return the team details
-            SELECT
-                t.team_id,
-                t.name,
-                t.creation_date,
-                t.home_facility_id,
-                CASE
-                    WHEN t.home_facility_id IS NULL THEN 'No home facility'
-                    ELSE f.name
-                END AS facility_name
-            FROM team t
-            LEFT JOIN facility f on t.home_facility_id = f.facility_id
-            WHERE t.team_id = @team_id;
-        END TRY
-        BEGIN CATCH
-            IF @@TRANCOUNT > 0
+
+ELSE
+BEGIN
+BEGIN TRY
+BEGIN TRANSACTION;
+
+INSERT INTO team_player (player_id, team_id, join_date, position)
+VALUES (@player_id, @team_id, @join_date, @position);
+
+COMMIT TRANSACTION;
+
+-- Return the team details
+SELECT
+    t.team_id,
+    t.name,
+    t.creation_date,
+    t.home_facility_id,
+    CASE
+        WHEN t.home_facility_id IS NULL THEN 'No home facility'
+        ELSE f.name
+        END AS facility_name
+FROM team t
+         LEFT JOIN facility f on t.home_facility_id = f.facility_id
+WHERE t.team_id = @team_id;
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
                 ROLLBACK TRANSACTION;
             
             THROW;
-        END CATCH;
-    END;
+END CATCH;
+END;
 END;
 GO
 
@@ -94,46 +94,46 @@ GO
 CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
     @facility_id    INT,
     @reason         VARCHAR(500)
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
-    BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
     -- 1. Ensure the facility exists
     IF NOT EXISTS (SELECT 1 FROM facility WHERE facility_id = @facility_id)
-    BEGIN
-        ROLLBACK TRANSACTION;
-        RETURN -1;
-    END;
+BEGIN
+ROLLBACK TRANSACTION;
+RETURN -1;
+END;
 
-    BEGIN TRY
+BEGIN TRY
         -- 2. Cancel all scheduled matches at this facility
-        UPDATE game
-        SET status = 'Cancelled'
-        WHERE facility_id = @facility_id
-          AND status = 'Scheduled';
+UPDATE game
+SET status = 'Cancelled'
+WHERE facility_id = @facility_id
+  AND status = 'Scheduled';
 
-        -- 3. Return facility details + the reason
-        SELECT
-            f.facility_id,
-            f.name,
-            f.address,
-            f.city,
-            f.[state],
-            f.zip,
-            f.phone,
-            f.website,
-            @reason AS cancellation_reason
-        FROM facility f
-        WHERE f.facility_id = @facility_id;
+-- 3. Return facility details + the reason
+SELECT
+    f.facility_id,
+    f.name,
+    f.address,
+    f.city,
+    f.[state],
+    f.zip,
+    f.phone,
+    f.website,
+    @reason AS cancellation_reason
+FROM facility f
+WHERE f.facility_id = @facility_id;
 
-        COMMIT TRANSACTION;
-        RETURN 0;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        RETURN -1;
-    END CATCH;
+COMMIT TRANSACTION;
+RETURN 0;
+END TRY
+BEGIN CATCH
+ROLLBACK TRANSACTION;
+RETURN -1;
+END CATCH;
 END;
 GO
 
@@ -149,7 +149,7 @@ CREATE OR ALTER PROCEDURE CreateFacilityLeague
     @EndDate DATE,
     @MaxTeams INT,
     @LeagueFormat VARCHAR(20)
-AS
+    AS
 BEGIN
 SET NOCOUNT ON;
     
@@ -160,75 +160,75 @@ SET NOCOUNT ON;
     DECLARE @Zip VARCHAR(20);
 
     -- Get facility location information to set as league information
-    SELECT @State = [state], @City = city, @Zip = zip
-    FROM facility
-    WHERE facility_id = @FacilityId;
+SELECT @State = [state], @City = city, @Zip = zip
+FROM facility
+WHERE facility_id = @FacilityId;
 
-    IF @@ROWCOUNT = 0
-    BEGIN
+IF @@ROWCOUNT = 0
+BEGIN
         RAISERROR('Facility ID %d not found.', 16, 1, @FacilityId);
         RETURN;
-    END
+END
     
     -- Check if there are teams with this facility as home
-    SELECT @TeamCount = COUNT(*) 
-    FROM team 
-    WHERE home_facility_id = @FacilityId;
-    
-    IF @TeamCount = 0
-    BEGIN
+SELECT @TeamCount = COUNT(*)
+FROM team
+WHERE home_facility_id = @FacilityId;
+
+IF @TeamCount = 0
+BEGIN
         RAISERROR('No teams found with this facility as home base.', 16, 1);
         RETURN;
-    END
+END
     
     IF @TeamCount > @MaxTeams
-    BEGIN
+BEGIN
         RAISERROR('There are more teams (%d) than the maximum allowed (%d) for the league.', 16, 1, @TeamCount, @MaxTeams);
         RETURN;
-    END
-    
-    BEGIN TRANSACTION;
-    
-    BEGIN TRY
+END
+
+BEGIN TRANSACTION;
+
+BEGIN TRY
         -- 1. INSERT: Create the new league
-        INSERT INTO league (name, state, city, zip, skill_level, status, start_date, end_date, max_teams, league_format)
+INSERT INTO league (name, state, city, zip, skill_level, status, start_date, end_date, max_teams, league_format)
         VALUES (@LeagueName, @State, @City, @Zip, @SkillLevel, 'Setting Up', @StartDate, @EndDate, @MaxTeams, @LeagueFormat);
         
         -- Get the new league ID
         SET @LeagueId = SCOPE_IDENTITY();
         
         -- 2. INSERT: Register all teams from the facility into the league
-        INSERT INTO league_team (league_id, team_id, join_date)
-        SELECT @LeagueId, team_id, GETDATE()
-        FROM team
-        WHERE home_facility_id = @FacilityId;
+INSERT INTO league_team (league_id, team_id, join_date)
+SELECT @LeagueId, team_id, GETDATE()
+FROM team
+WHERE home_facility_id = @FacilityId;
 
-        -- 3. UPDATE: Update the league status to indicate it's ready
-        UPDATE league
-        SET status = 'In Season'
-        WHERE league_id = @LeagueId;
-        
-        -- 4. SELECT: Return information about the registered teams
-        SELECT 
-            l.league_id, 
-            l.name AS league_name, 
-            t.team_id, 
-            t.name AS team_name,
-            f.name AS facility_name,
-            lt.join_date
-        FROM league l
-        JOIN league_team lt ON l.league_id = lt.league_id
-        JOIN team t ON lt.team_id = t.team_id
-        JOIN facility f ON t.home_facility_id = f.facility_id
-        WHERE l.league_id = @LeagueId;
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
+-- 3. UPDATE: Update the league status to indicate it's ready
+UPDATE league
+SET status = 'In Season'
+WHERE league_id = @LeagueId;
+
+-- 4. SELECT: Return information about the registered teams
+SELECT
+    l.league_id,
+    l.name AS league_name,
+    t.team_id,
+    t.name AS team_name,
+    f.name AS facility_name,
+    lt.join_date
+FROM league l
+         JOIN league_team lt ON l.league_id = lt.league_id
+         JOIN team t ON lt.team_id = t.team_id
+         JOIN facility f ON t.home_facility_id = f.facility_id
+WHERE l.league_id = @LeagueId;
+
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
             
         THROW;
-    END CATCH;
+END CATCH;
 END
 GO
