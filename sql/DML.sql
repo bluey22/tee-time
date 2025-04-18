@@ -606,9 +606,9 @@ WHERE game_id = @GameID AND team_id <> @Team1ID;
 -- This is a simplified handicap calculation - in reality, handicap calculations are more complex
 -- For winners: slightly decrease handicap (improve)
 -- For losers: slightly increase handicap
-DECLARE @WinnerAdjustment DECIMAL(4,1) = -0.2; -- Improve handicap
-        DECLARE @LoserAdjustment DECIMAL(4,1) = 0.1;  -- Decrease handicap
-        DECLARE @TieAdjustment DECIMAL(4,1) = -0.1;   -- Slight improvement for both
+DECLARE @WinnerAdjustment DECIMAL(4,1) = 0.2; -- Improve handicap
+        DECLARE @LoserAdjustment DECIMAL(4,1) = -0.1;  -- Decrease handicap
+        DECLARE @TieAdjustment DECIMAL(4,1) = 0.1;   -- Slight improvement for both
 
         -- Determine which team won
         DECLARE @WinningTeamID INT, @LosingTeamID INT;
