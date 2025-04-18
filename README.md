@@ -19,6 +19,6 @@ cp src/utils/Credentials.java.template src/utils/Credentials.java
 ```
 
 Setup the SQL database for testing:
-- Relations are defined in `tables.sql`
-- Procedures are defined in `operations.sql`
-- Mock data is defined in `dev_data.sql`
+- Relations are defined in `DDL.sql`
+- Procedures / Use Cases are defined in `DML.sql`
+- Mock data for testing is defined in `dev_data.sql`
