@@ -37,7 +37,7 @@ public class App {
                 System.out.println("2. Cancel a membership");
                 System.out.println("3. Cancel Matches at a Facility");
                 System.out.println("4. Create a Home League at a Facility (Adds all home teams)");
-                System.out.println("5. Update player handycaps manually");
+                System.out.println("5. Update match details");
                 System.out.print("Enter your choice (input a number 1 through 6): ");
 
                 int choice = scanner.nextInt();
@@ -56,7 +56,7 @@ public class App {
                         createFacilityLeague(connection, scanner);
                         break;
                     case 5:
-                        updatePlayerHandicap(connection, scanner);
+                        updateMatchResults(connection, scanner);
                         break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
@@ -71,7 +71,7 @@ public class App {
     }
 
     // Use Case 1: Join a Team
-    //  - e.g., Add tiger woods (6) to to Birdie Bandits (1)
+    //  - e.g., Add min woo lee (8) to to Drive Dynasty (3)
     private static void joinTeam(Connection connection, Scanner scanner) {
         System.out.println("\n=== Join Team ===");
         String callStoredProc = "{call dbo.joinTeam(?,?,?,?)}";
@@ -421,16 +421,28 @@ public class App {
         }
     }
 
-    // Use Case: Update Player Handicap
-    private static void updatePlayerHandicap(Connection connection, Scanner scanner) {
-        System.out.println("\n=== Update Player Handicap ===");
-        String callStoredProc = "{call dbo.UpdatePlayerHandicap(?)}";
-        int inpPlayerId;
+    // Use Case 9: Update Match Results
+    private static void updateMatchResults(Connection connection, Scanner scanner) {
+        System.out.println("\n=== Update Match Results ===");
+        String callStoredProc = "{call dbo.UpdateMatchResults(?,?,?,?,?)}";
+        int inpGameId, inpTeam1Id, inpTeam1Score, inpTeam2Id, inpTeam2Score;
 
         // Prompt the user for information
         try {
-            System.out.println("Enter the player id (as an integer), then press enter:");
-            inpPlayerId = Integer.parseInt(scanner.nextLine().trim());
+            System.out.println("Enter the game ID (as an integer), then press enter:");
+            inpGameId = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter the first team ID (as an integer), then press enter:");
+            inpTeam1Id = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter the first team's score (as an integer), then press enter:");
+            inpTeam1Score = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter the second team ID (as an integer), then press enter:");
+            inpTeam2Id = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("Enter the second team's score (as an integer), then press enter:");
+            inpTeam2Score = Integer.parseInt(scanner.nextLine().trim());
         } catch (Exception e) {
             System.out.println("Invalid input given, please try again. Exiting...");
             return;
@@ -441,7 +453,11 @@ public class App {
             connection.setAutoCommit(false);
 
             // Set input parameters
-            prepStoredProc.setInt(1, inpPlayerId);
+            prepStoredProc.setInt(1, inpGameId);
+            prepStoredProc.setInt(2, inpTeam1Id);
+            prepStoredProc.setInt(3, inpTeam1Score);
+            prepStoredProc.setInt(4, inpTeam2Id);
+            prepStoredProc.setInt(5, inpTeam2Score);
 
             // Execute the stored procedure
             boolean hasResults = prepStoredProc.execute();
@@ -450,41 +466,23 @@ public class App {
             if (hasResults) {
                 try (ResultSet rs = prepStoredProc.getResultSet()) {
                     if (rs.next()) {
-                        System.out.println("\n=== Player Handicap Update Results ===");
-                        System.out.println("Player ID:          " + rs.getInt("player_id"));
-                        System.out.println("First Name:         " + rs.getString("first_name"));
-                        System.out.println("Last Name:          " + rs.getString("last_name"));
-
-                        // Check if we have an average score (might not be available if no matches found)
-                        if (rs.getMetaData().getColumnCount() > 4 && rs.getObject("average_score") != null) {
-                            System.out.println("Average Score:      " + rs.getDouble("average_score"));
-                        }
-
-                        System.out.println("New Handicap:       " + rs.getDouble("new_handicap"));
-                        System.out.println("Status:             " + rs.getString("update_status"));
+                        System.out.println("\n=== Match Results Successfully Updated ===");
+                        System.out.println("Game ID:            " + rs.getInt("game_id"));
+                        System.out.println("League:             " + (rs.getString("league_name") != null ? rs.getString("league_name") : "N/A"));
+                        System.out.println("Facility:           " + rs.getString("facility_name"));
+                        System.out.println("Date/Time:          " + rs.getTimestamp("date_time"));
+                        System.out.println("Status:             " + rs.getString("status"));
+                        System.out.println("Game Type:          " + rs.getString("game_type"));
+                        System.out.println("\n=== Results Summary ===");
+                        System.out.println(rs.getString("team1_name") + ": " + rs.getInt("team1_score"));
+                        System.out.println(rs.getString("team2_name") + ": " + rs.getInt("team2_score"));
+                        System.out.println("Winner:             " + rs.getString("winner"));
                     } else {
                         System.out.println("No results returned.");
                     }
                 }
             } else {
-                // Try to get more results
-                hasResults = prepStoredProc.getMoreResults();
-                if (hasResults) {
-                    try (ResultSet rs = prepStoredProc.getResultSet()) {
-                        if (rs.next()) {
-                            System.out.println("\n=== Player Handicap Update Results ===");
-                            System.out.println("Player ID:          " + rs.getInt("player_id"));
-                            System.out.println("First Name:         " + rs.getString("first_name"));
-                            System.out.println("Last Name:          " + rs.getString("last_name"));
-                            System.out.println("New Handicap:       " + rs.getDouble("new_handicap"));
-                            System.out.println("Status:             " + rs.getString("update_status"));
-                        } else {
-                            System.out.println("No results returned.");
-                        }
-                    }
-                } else {
-                    System.out.println("No result set was returned.");
-                }
+                System.out.println("No result set was returned.");
             }
 
             // Commit the transaction
