@@ -1,6 +1,7 @@
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 import utils.Credentials;
@@ -66,6 +67,7 @@ public class App {
     }
 
     // Use Case 1: Join a Team
+    //  - e.g., Add tiger woods (6) to to Birdie Bandits (1)
     private static void joinTeam(Connection connection, Scanner scanner) {
         System.out.println("\n=== Join Team ===");
         String callStoredProc = "{call dbo.joinTeam(?,?,?,?)}";
@@ -302,6 +304,7 @@ public class App {
     }
     
     // Use case 4:
+    // - e.g., Register everyone at Top Golf (1) to an Advanced league starting now, ending 2025-07-31, RR
     private static void createFacilityLeague(Connection connection, Scanner scanner) {
         System.out.println("\n=== Create Facility League ===");
         String callStoredProc = "{call RegisterTeamsFromFacilityToLeague(?,?,?,?,?,?,?)}";
@@ -320,15 +323,15 @@ public class App {
             System.out.println("Enter skill level (Complete Beginner, Beginner, Intermediate, Advanced, Professional):");
             skillLevel = scanner.nextLine().trim();
 
-            System.out.print("Enter start date (YYYY-MM-DD): ");
+            System.out.print("Enter start date (YYYY-MM-DD) (Leave Empty for Today): ");
             startDate = scanner.nextLine().trim();
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 dateFormat.setLenient(false);
                 dateFormat.parse(startDate);
             } catch (ParseException e) {
-                System.out.println("Invalid date format. Please try again.");
-                return;
+                System.out.println("Empty or invalid date format. Proceeding with today's date");
+                startDate = LocalDate.now().toString();
             }
 
             System.out.print("Enter end date (YYYY-MM-DD): ");
