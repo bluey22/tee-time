@@ -65,7 +65,7 @@ GO
 
 
 
-CREATE OR ALTER PROCEDURE CancelPlayerMembership
+CREATE OR ALTER PROCEDURE CancelPlayerMembership --Use Case 6
     @player_id INT,
     @membership_id INT
     AS
@@ -243,7 +243,7 @@ END CATCH;
 END
 GO
 
--- --------------------- Use Case: Update Player Handicap -----------------------------
+-- --------------------- Use Case: Update Player Handicap (Use Case 5) -----------------------------
 -- DML: select, update
 -- tables: game_team, team_player, player
 CREATE OR ALTER PROCEDURE UpdatePlayerHandicap
@@ -366,5 +366,63 @@ END
 CLOSE player_cursor;
 DEALLOCATE player_cursor;
 END
+END;
+GO
+
+-- -------------------- Use Case 7: Updating League Status --------------------
+CREATE OR ALTER PROCEDURE UpdateLeagueStatus
+    @league_id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+
+    -- 1. Verify league exists
+    IF NOT EXISTS (SELECT 1 FROM league WHERE league_id = @league_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;  -- league not found
+    END;
+
+    -- 2. Count joined teams vs. max_teams
+    DECLARE @joinedCount INT, @maxTeams INT;
+    SELECT @joinedCount = COUNT(*) 
+      FROM league_team 
+     WHERE league_id = @league_id;
+
+    SELECT @maxTeams = max_teams
+      FROM league
+     WHERE league_id = @league_id;
+
+    -- 3. If not all teams joined, abort
+    IF @joinedCount < @maxTeams
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -2;  -- not ready: still waiting on teams
+    END;
+
+    -- 4. Transition to “In Season”
+    UPDATE league
+       SET status = 'In Season'
+     WHERE league_id = @league_id;
+
+    -- 5. Return updated league info + joinedCount
+    SELECT
+        l.league_id,
+        l.name,
+        l.state,
+        l.city,
+        l.zip,
+        l.skill_level,
+        l.status,
+        l.start_date,
+        l.end_date,
+        l.max_teams,
+        @joinedCount AS teams_joined
+    FROM league l
+    WHERE l.league_id = @league_id;
+
+    COMMIT TRANSACTION;
+    RETURN 0;  -- success
 END;
 GO

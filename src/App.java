@@ -38,6 +38,7 @@ public class App {
                 System.out.println("3. Cancel Matches at a Facility");
                 System.out.println("4. Create a Home League at a Facility (Adds all home teams)");
                 System.out.println("5. Update player handycaps manually");
+                System.out.println("6. Update League Status");
                 System.out.print("Enter your choice (input a number 1 through 6): ");
 
                 int choice = scanner.nextInt();
@@ -58,6 +59,10 @@ public class App {
                     case 5:
                         updatePlayerHandicap(connection, scanner);
                         break;
+                    case 6:
+                        updateLeagueStatus(connection, scanner);
+                        break;
+                    
                     default:
                         System.out.println("Invalid choice. Please try again.");
                         break;
@@ -421,7 +426,7 @@ public class App {
         }
     }
 
-    // Use Case: Update Player Handicap
+    // Use Case: Update Player Handicap (Use Case 5)
     private static void updatePlayerHandicap(Connection connection, Scanner scanner) {
         System.out.println("\n=== Update Player Handicap ===");
         String callStoredProc = "{call dbo.UpdatePlayerHandicap(?)}";
@@ -499,4 +504,79 @@ public class App {
             e.printStackTrace();
         }
     }
+    private static void updateLeagueStatus(Connection connection, Scanner scanner) {
+        System.out.println("\n=== Update League Status ===");
+        System.out.print("Enter League ID: ");
+        int leagueId;
+        try {
+            leagueId = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid League ID. Exiting...");
+            return;
+        }
+    
+        String callProc = "{? = call dbo.UpdateLeagueStatus(?)}";
+        try (CallableStatement stmt = connection.prepareCall(callProc)) {
+            connection.setAutoCommit(false);
+    
+            // register return code
+            stmt.registerOutParameter(1, Types.INTEGER);
+            stmt.setInt(2, leagueId);
+    
+            // execute
+            stmt.execute();
+            int rc = stmt.getInt(1);
+            if (rc == -1) {
+                System.out.println("Error: League not found.");
+                connection.rollback();
+                return;
+            } else if (rc == -2) {
+                System.out.println("Cannot update: not all teams have joined yet.");
+                connection.rollback();
+                return;
+            }
+    
+            // read the updated league row
+            try (ResultSet rs = stmt.getResultSet()) {
+                if (rs != null && rs.next()) {
+                    System.out.println("\n--- League Details ---");
+                    System.out.println("League ID:     " + rs.getInt("league_id"));
+                    System.out.println("Name:          " + rs.getString("name"));
+                    System.out.println("Location:      " 
+                        + rs.getString("city") + ", " 
+                        + rs.getString("state") + " " 
+                        + rs.getString("zip"));
+                    System.out.println("Skill Level:   " + rs.getString("skill_level"));
+                    System.out.println("Status:        " + rs.getString("status"));
+                    System.out.println("Start Date:    " + rs.getDate("start_date"));
+                    System.out.println("End Date:      " + rs.getDate("end_date"));
+                    System.out.println("Max Teams:     " + rs.getInt("max_teams"));
+                    System.out.println("Teams Joined:  " + rs.getInt("teams_joined"));
+                    System.out.println("\nLeague is now In Season!");
+                } else {
+                    System.out.println("No data returned after update.");
+                }
+            }
+    
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+            try {
+                connection.rollback();
+                System.out.println("Rolled back.");
+            } catch (SQLException ex) {
+                System.out.println("Rollback failed: " + ex.getMessage());
+            }
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                System.out.println("Couldn't reset auto-commit: " + e.getMessage());
+            }
+        }
+    }
+    
+
 }
+
+
