@@ -70,6 +70,15 @@ CREATE PROCEDURE CancelPlayerMembership
 AS
 BEGIN
     SET NOCOUNT ON;
+    -- Check if the membership exists
+    IF NOT EXISTS (SELECT 1 FROM player_membership
+                  WHERE player_id = @player_id AND membership_id = @membership_id)
+BEGIN
+        -- Return an error message
+SELECT 'Membership not found' AS error_message;
+RETURN;
+END
+
     -- Step 1: Update payment status to 'Cancelled'
 UPDATE player_membership
 SET payment_status = 'Cancelled'
@@ -89,7 +98,6 @@ FROM facility f
          JOIN membership m ON f.facility_id = m.facility_id
 WHERE m.membership_id = @membership_id;
 END;
-GO
 
 -- --------------------- Use Case 3: Match Cancellation (Case #13 in doc2) --------------------------------
 CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
