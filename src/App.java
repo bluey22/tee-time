@@ -71,7 +71,7 @@ public class App {
     }
 
     // Use Case 1: Join a Team
-    //  - e.g., Add tiger woods (6) to to Birdie Bandits (1)
+    //  - e.g., Add min woo lee (8) to to Drive Dynasty (3)
     private static void joinTeam(Connection connection, Scanner scanner) {
         System.out.println("\n=== Join Team ===");
         String callStoredProc = "{call dbo.joinTeam(?,?,?,?)}";
