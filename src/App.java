@@ -558,6 +558,7 @@ private static void cancelMatchesAtFacility(Connection connection, Scanner scann
     }
 
     // Use Case 7: Update League Status (all‐status workflow)
+// Use Case 7: Update League Status (with final team scores)
 private static void updateLeagueStatus(Connection connection, Scanner scanner) {
     System.out.println("\n=== Update League Status ===");
     System.out.print("Enter League ID: ");
@@ -572,7 +573,7 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
     try {
         connection.setAutoCommit(false);
 
-        // 1) Fetch current status and max_teams
+        // 1) Fetch current status + max_teams
         String fetchSql = "SELECT status, max_teams FROM league WHERE league_id = ?";
         String currentStatus;
         int maxTeams;
@@ -585,7 +586,7 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
                     return;
                 }
                 currentStatus = rs.getString("status");
-                maxTeams = rs.getInt("max_teams");
+                maxTeams      = rs.getInt("max_teams");
             }
         }
 
@@ -604,8 +605,10 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
                     }
                 }
                 if (joinedCount < maxTeams) {
-                    System.out.printf("Cannot move to In Season: %d of %d teams have joined.%n",
-                                      joinedCount, maxTeams);
+                    System.out.printf(
+                      "Cannot move to In Season: %d of %d teams have joined.%n",
+                      joinedCount, maxTeams
+                    );
                     connection.rollback();
                     return;
                 }
@@ -639,27 +642,63 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
         try (PreparedStatement ps = connection.prepareStatement(
                 "UPDATE league SET status = ? WHERE league_id = ?")) {
             ps.setString(1, nextStatus);
-            ps.setInt(2, leagueId);
+            ps.setInt(2,    leagueId);
             ps.executeUpdate();
         }
 
-        // 4) Show the updated league row
+        // 4) Display the updated league row
         try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT league_id, name, state, city, zip, skill_level, status, start_date, end_date, max_teams " +
-                "FROM league WHERE league_id = ?")) {
+                "SELECT league_id, name, city, state, zip, skill_level, status, start_date, end_date, max_teams "
+              + "FROM league WHERE league_id = ?")) {
             ps.setInt(1, leagueId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     System.out.println("\n--- League Updated ---");
-                    System.out.println("League ID:    " + rs.getInt("league_id"));
-                    System.out.println("Name:         " + rs.getString("name"));
-                    System.out.println("Location:     " + rs.getString("city") + ", " + rs.getString("state") + " " + rs.getString("zip"));
-                    System.out.println("Skill Level:  " + rs.getString("skill_level"));
-                    System.out.println("Status:       " + rs.getString("status"));
-                    System.out.println("Start Date:   " + rs.getDate("start_date"));
-                    System.out.println("End Date:     " + rs.getDate("end_date"));
-                    System.out.println("Max Teams:    " + rs.getInt("max_teams"));
-                    System.out.println("\nTransitioned from \"" + currentStatus + "\" to \"" + nextStatus + "\".");
+                    System.out.println("League ID:   " + rs.getInt("league_id"));
+                    System.out.println("Name:        " + rs.getString("name"));
+                    System.out.println("Location:    " 
+                        + rs.getString("city") + ", " 
+                        + rs.getString("state") + " " 
+                        + rs.getString("zip"));
+                    System.out.println("Skill Level: " + rs.getString("skill_level"));
+                    System.out.println("Status:      " + rs.getString("status"));
+                    System.out.println("Start Date:  " + rs.getDate("start_date"));
+                    System.out.println("End Date:    " + rs.getDate("end_date"));
+                    System.out.println("Max Teams:   " + rs.getInt("max_teams"));
+                    System.out.printf("Transitioned from \"%s\" to \"%s\".%n",
+                                      currentStatus, nextStatus);
+                }
+            }
+        }
+
+        // 5) If we've just moved to "Completed", show final team scores
+        if ("Completed".equals(nextStatus)) {
+            System.out.println("\n--- Final Standings (Total Points) ---");
+            String standingsSql =
+              "SELECT t.team_id, t.name AS team_name, "
+            + "       ISNULL(SUM(gt.score),0) AS total_score "
+            + "  FROM league_team lt "
+            + "  JOIN team t ON lt.team_id = t.team_id "
+            + "  LEFT JOIN game_team gt "
+            + "    ON gt.team_id = t.team_id "
+            + "   AND gt.game_id IN ("
+            + "       SELECT game_id FROM game "
+            + "        WHERE league_id = ? AND status = 'Completed'"
+            + "     ) "
+            + " WHERE lt.league_id = ? "
+            + " GROUP BY t.team_id, t.name "
+            + " ORDER BY total_score DESC";
+            try (PreparedStatement ps = connection.prepareStatement(standingsSql)) {
+                ps.setInt(1, leagueId);
+                ps.setInt(2, leagueId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        System.out.printf("Team %-3d %-20s : %4d points%n",
+                          rs.getInt("team_id"),
+                          rs.getString("team_name"),
+                          rs.getInt("total_score")
+                        );
+                    }
                 }
             }
         }
@@ -681,6 +720,7 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
         }
     }
 }
+
 
     
 
