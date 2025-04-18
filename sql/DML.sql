@@ -69,6 +69,7 @@ CREATE PROCEDURE CancelPlayerMembership
     @membership_id INT
 AS
 BEGIN
+    SET NOCOUNT ON;
     -- Step 1: Update payment status to 'Cancelled'
 UPDATE player_membership
 SET payment_status = 'Cancelled'
