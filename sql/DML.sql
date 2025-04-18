@@ -236,34 +236,34 @@ GO
 
 -- ----------------------------- Helpful Stored Procedures (No Use Cases) ----------------------------
 CREATE PROCEDURE GetPlayersWithTeamInfo
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT 
-        p.player_id,
-        p.first_name,
-        p.last_name,
-        p.email,
-        p.phone_number,
-        p.skill_level,
-        p.handicap,
-        t.team_id,
-        t.name AS team_name,
-        t.creation_date AS team_creation_date,
-        f.name AS facility_name,
-        tp.join_date AS team_join_date,
-        tp.position AS team_position
-    FROM 
-        player p
-    LEFT JOIN 
-        team_player tp ON p.player_id = tp.player_id
-    LEFT JOIN 
-        team t ON tp.team_id = t.team_id
-    LEFT JOIN
-        facility f ON t.home_facility_id = f.facility_id
-    ORDER BY
-        p.last_name, p.first_name;
+
+SELECT
+    p.player_id,
+    p.first_name,
+    p.last_name,
+    p.email,
+    p.phone_number,
+    p.skill_level,
+    p.handicap,
+    t.team_id,
+    t.name AS team_name,
+    t.creation_date AS team_creation_date,
+    f.name AS facility_name,
+    tp.join_date AS team_join_date,
+    tp.position AS team_position
+FROM
+    player p
+        LEFT JOIN
+    team_player tp ON p.player_id = tp.player_id
+        LEFT JOIN
+    team t ON tp.team_id = t.team_id
+        LEFT JOIN
+    facility f ON t.home_facility_id = f.facility_id
+ORDER BY
+    p.last_name, p.first_name;
 END
 GO
 
@@ -272,68 +272,68 @@ CREATE PROCEDURE GetTeamsWithLeagueInfo
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT 
-        l.league_id,
-        l.name AS league_name,
-        l.state,
-        l.city,
-        l.skill_level AS league_skill_level,
-        l.status AS league_status,
-        l.start_date,
-        l.end_date,
-        t.team_id,
-        t.name AS team_name,
-        t.creation_date,
-        f.facility_id,
-        f.name AS facility_name,
-        lt.join_date AS league_join_date
-    FROM 
-        league l
-    LEFT JOIN 
-        league_team lt ON l.league_id = lt.league_id
-    LEFT JOIN 
-        team t ON lt.team_id = t.team_id
-    LEFT JOIN
-        facility f ON t.home_facility_id = f.facility_id
-    WHERE
-        (@LeagueId IS NULL OR l.league_id = @LeagueId)
-    ORDER BY
-        l.name, t.name;
+
+SELECT
+    l.league_id,
+    l.name AS league_name,
+    l.state,
+    l.city,
+    l.skill_level AS league_skill_level,
+    l.status AS league_status,
+    l.start_date,
+    l.end_date,
+    t.team_id,
+    t.name AS team_name,
+    t.creation_date,
+    f.facility_id,
+    f.name AS facility_name,
+    lt.join_date AS league_join_date
+FROM
+    league l
+        LEFT JOIN
+    league_team lt ON l.league_id = lt.league_id
+        LEFT JOIN
+    team t ON lt.team_id = t.team_id
+        LEFT JOIN
+    facility f ON t.home_facility_id = f.facility_id
+WHERE
+    (@LeagueId IS NULL OR l.league_id = @LeagueId)
+ORDER BY
+    l.name, t.name;
 END
 GO
 
 
 -- ----------------------------- Helpful Stored Procedures (No Use Cases) ----------------------------
 CREATE PROCEDURE GetPlayersWithTeamInfo
-AS
+    AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT 
-        p.player_id,
-        p.first_name,
-        p.last_name,
-        p.email,
-        p.phone_number,
-        p.skill_level,
-        p.handicap,
-        t.team_id,
-        t.name AS team_name,
-        t.creation_date AS team_creation_date,
-        f.name AS facility_name,
-        tp.join_date AS team_join_date,
-        tp.position AS team_position
-    FROM 
-        player p
-    LEFT JOIN 
-        team_player tp ON p.player_id = tp.player_id
-    LEFT JOIN 
-        team t ON tp.team_id = t.team_id
-    LEFT JOIN
-        facility f ON t.home_facility_id = f.facility_id
-    ORDER BY
-        p.last_name, p.first_name;
+
+SELECT
+    p.player_id,
+    p.first_name,
+    p.last_name,
+    p.email,
+    p.phone_number,
+    p.skill_level,
+    p.handicap,
+    t.team_id,
+    t.name AS team_name,
+    t.creation_date AS team_creation_date,
+    f.name AS facility_name,
+    tp.join_date AS team_join_date,
+    tp.position AS team_position
+FROM
+    player p
+        LEFT JOIN
+    team_player tp ON p.player_id = tp.player_id
+        LEFT JOIN
+    team t ON tp.team_id = t.team_id
+        LEFT JOIN
+    facility f ON t.home_facility_id = f.facility_id
+ORDER BY
+    p.last_name, p.first_name;
 END
 GO
 
@@ -342,34 +342,34 @@ CREATE PROCEDURE GetTeamsWithLeagueInfo
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT 
-        l.league_id,
-        l.name AS league_name,
-        l.state,
-        l.city,
-        l.skill_level AS league_skill_level,
-        l.status AS league_status,
-        l.start_date,
-        l.end_date,
-        t.team_id,
-        t.name AS team_name,
-        t.creation_date,
-        f.facility_id,
-        f.name AS facility_name,
-        lt.join_date AS league_join_date
-    FROM 
-        league l
-    LEFT JOIN 
-        league_team lt ON l.league_id = lt.league_id
-    LEFT JOIN 
-        team t ON lt.team_id = t.team_id
-    LEFT JOIN
-        facility f ON t.home_facility_id = f.facility_id
-    WHERE
-        (@LeagueId IS NULL OR l.league_id = @LeagueId)
-    ORDER BY
-        l.name, t.name;
+
+SELECT
+    l.league_id,
+    l.name AS league_name,
+    l.state,
+    l.city,
+    l.skill_level AS league_skill_level,
+    l.status AS league_status,
+    l.start_date,
+    l.end_date,
+    t.team_id,
+    t.name AS team_name,
+    t.creation_date,
+    f.facility_id,
+    f.name AS facility_name,
+    lt.join_date AS league_join_date
+FROM
+    league l
+        LEFT JOIN
+    league_team lt ON l.league_id = lt.league_id
+        LEFT JOIN
+    team t ON lt.team_id = t.team_id
+        LEFT JOIN
+    facility f ON t.home_facility_id = f.facility_id
+WHERE
+    (@LeagueId IS NULL OR l.league_id = @LeagueId)
+ORDER BY
+    l.name, t.name;
 END
 GO
 
@@ -426,7 +426,7 @@ END
         -- Using 72 as a standard par score, adjust as needed
         SET @new_handicap = @avg_score - 72.0;
 
-        -- Update player's handicap
+ -- Update player's handicap
 UPDATE player
 SET handicap = @new_handicap
 WHERE player_id = @player_id;
@@ -457,44 +457,213 @@ END CATCH;
 END;
 GO
 
--- --------------------- Trigger to Update Handicap After Match Score Changes -----------------------------
-CREATE OR ALTER TRIGGER AutoUpdateHandicapAfterMatch
-ON game_team
-AFTER INSERT, UPDATE
-                                  AS
+CREATE OR ALTER PROCEDURE UpdateMatchResults
+    @GameID INT,
+    @Team1ID INT,
+    @Team1Score INT,
+    @Team2ID INT,
+    @Team2Score INT
+    AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Only process if score was updated
-    IF UPDATE(score)
+    -- Begin transaction for atomicity
+BEGIN TRY
+BEGIN TRANSACTION;
+
+        -- Verify that the game exists
+        IF NOT EXISTS (SELECT 1 FROM game WHERE game_id = @GameID)
 BEGIN
-        -- Temporary table to hold players that need handicap updates
-        DECLARE @players_to_update TABLE (player_id INT);
-
-        -- Find all players on teams that had scores updated
-INSERT INTO @players_to_update
-SELECT DISTINCT tp.player_id
-FROM inserted i
-         JOIN team_player tp ON i.team_id = tp.team_id
-         JOIN game g ON i.game_id = g.game_id
-WHERE g.status = 'Completed';
-
--- Update handicap for each player
-DECLARE @player_id INT;
-        DECLARE player_cursor CURSOR FOR
-SELECT player_id FROM @players_to_update;
-
-OPEN player_cursor;
-FETCH NEXT FROM player_cursor INTO @player_id;
-
-WHILE @@FETCH_STATUS = 0
-BEGIN
-EXEC UpdatePlayerHandicap @player_id;
-FETCH NEXT FROM player_cursor INTO @player_id;
+            RAISERROR('Game with ID %d does not exist.', 16, 1, @GameID);
+            RETURN;
 END
 
-CLOSE player_cursor;
-DEALLOCATE player_cursor;
+        -- Verify that the game is not already completed or cancelled
+        DECLARE @CurrentStatus VARCHAR(20);
+SELECT @CurrentStatus = status FROM game WHERE game_id = @GameID;
+
+IF @CurrentStatus = 'Completed'
+BEGIN
+            RAISERROR('Game with ID %d is already marked as completed.', 16, 1, @GameID);
+            RETURN;
+END
+
+        IF @CurrentStatus = 'Cancelled'
+BEGIN
+            RAISERROR('Game with ID %d has been cancelled and cannot be updated.', 16, 1, @GameID);
+            RETURN;
+END
+
+        -- Verify that both teams are part of this game
+        IF NOT EXISTS (SELECT 1 FROM game_team WHERE game_id = @GameID AND team_id = @Team1ID)
+BEGIN
+            RAISERROR('Team with ID %d is not part of game with ID %d.', 16, 1, @Team1ID, @GameID);
+            RETURN;
+END
+
+        IF NOT EXISTS (SELECT 1 FROM game_team WHERE game_id = @GameID AND team_id = @Team2ID)
+BEGIN
+            RAISERROR('Team with ID %d is not part of game with ID %d.', 16, 1, @Team2ID, @GameID);
+            RETURN;
+END
+
+        -- Update the scores for both teams
+UPDATE game_team
+SET score = @Team1Score
+WHERE game_id = @GameID AND team_id = @Team1ID;
+
+UPDATE game_team
+SET score = @Team2Score
+WHERE game_id = @GameID AND team_id = @Team2ID;
+
+-- Update the game status to 'Completed'
+UPDATE game
+SET status = 'Completed'
+WHERE game_id = @GameID;
+
+-- Return game details with updated information
+SELECT
+    g.game_id,
+    g.league_id,
+    l.name AS league_name,
+    g.facility_id,
+    f.name AS facility_name,
+    g.date_time,
+    g.status,
+    g.game_type,
+    t1.team_id AS team1_id,
+    t1.name AS team1_name,
+    gt1.score AS team1_score,
+    t2.team_id AS team2_id,
+    t2.name AS team2_name,
+    gt2.score AS team2_score,
+    CASE
+        WHEN gt1.score > gt2.score THEN t1.name
+        WHEN gt2.score > gt1.score THEN t2.name
+        ELSE 'Tie'
+        END AS winner
+FROM game g
+         JOIN facility f ON g.facility_id = f.facility_id
+         LEFT JOIN league l ON g.league_id = l.league_id
+         JOIN game_team gt1 ON g.game_id = gt1.game_id AND gt1.team_id = @Team1ID
+         JOIN game_team gt2 ON g.game_id = gt2.game_id AND gt2.team_id = @Team2ID
+         JOIN team t1 ON gt1.team_id = t1.team_id
+         JOIN team t2 ON gt2.team_id = t2.team_id
+WHERE g.game_id = @GameID;
+
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+        -- An error occurred, roll back the transaction
+IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        -- Return error information
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+END CATCH
+END;
+
+-- Create a trigger that updates player handicaps after a game is completed
+CREATE OR ALTER TRIGGER trg_UpdatePlayerHandicap
+ON game
+AFTER UPDATE
+                          AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Only proceed if a game was marked as completed
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted d ON i.game_id = d.game_id
+        WHERE i.status = 'Completed' AND d.status <> 'Completed'
+    )
+BEGIN
+        -- Get the game_id of the completed game
+        DECLARE @GameID INT;
+SELECT @GameID = i.game_id
+FROM inserted i
+         JOIN deleted d ON i.game_id = d.game_id
+WHERE i.status = 'Completed' AND d.status <> 'Completed';
+
+-- Get team scores
+DECLARE @Team1ID INT, @Team2ID INT, @Team1Score INT, @Team2Score INT;
+
+        -- Get teams and scores for this game
+SELECT TOP 1 @Team1ID = team_id, @Team1Score = score
+FROM game_team
+WHERE game_id = @GameID;
+
+SELECT TOP 1 @Team2ID = team_id, @Team2Score = score
+FROM game_team
+WHERE game_id = @GameID AND team_id <> @Team1ID;
+
+-- Calculate handicap adjustment factors based on game performance
+-- This is a simplified handicap calculation - in reality, handicap calculations are more complex
+-- For winners: slightly decrease handicap (improve)
+-- For losers: slightly increase handicap
+DECLARE @WinnerAdjustment DECIMAL(4,1) = -0.2; -- Improve handicap
+        DECLARE @LoserAdjustment DECIMAL(4,1) = 0.1;  -- Decrease handicap
+        DECLARE @TieAdjustment DECIMAL(4,1) = -0.1;   -- Slight improvement for both
+
+        -- Determine which team won
+        DECLARE @WinningTeamID INT, @LosingTeamID INT;
+        IF @Team1Score > @Team2Score
+BEGIN
+            SET @WinningTeamID = @Team1ID;
+            SET @LosingTeamID = @Team2ID;
+END
+ELSE IF @Team2Score > @Team1Score
+BEGIN
+            SET @WinningTeamID = @Team2ID;
+            SET @LosingTeamID = @Team1ID;
+END
+        -- If it's a tie, both teams get a slight improvement
+
+        -- Update handicaps for players on the winning team
+        IF @WinningTeamID IS NOT NULL
+BEGIN
+UPDATE player
+SET handicap =
+        CASE
+            WHEN handicap IS NULL THEN NULL -- Don't update NULL handicaps
+            ELSE ROUND(handicap + @WinnerAdjustment, 1)
+            END
+    FROM player p
+            JOIN team_player tp ON p.player_id = tp.player_id
+WHERE tp.team_id = @WinningTeamID
+  AND p.handicap IS NOT NULL;
+
+-- Update handicaps for players on the losing team
+UPDATE player
+SET handicap =
+        CASE
+            WHEN handicap IS NULL THEN NULL -- Don't update NULL handicaps
+            ELSE ROUND(handicap + @LoserAdjustment, 1)
+            END
+    FROM player p
+            JOIN team_player tp ON p.player_id = tp.player_id
+WHERE tp.team_id = @LosingTeamID
+  AND p.handicap IS NOT NULL;
+END
+ELSE
+BEGIN
+            -- It's a tie - update both teams with the tie adjustment
+UPDATE player
+SET handicap =
+        CASE
+            WHEN handicap IS NULL THEN NULL -- Don't update NULL handicaps
+            ELSE ROUND(handicap + @TieAdjustment, 1)
+            END
+    FROM player p
+            JOIN team_player tp ON p.player_id = tp.player_id
+WHERE tp.team_id IN (@Team1ID, @Team2ID)
+  AND p.handicap IS NOT NULL;
+END
+
 END
 END;
-GO
