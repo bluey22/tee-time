@@ -38,6 +38,7 @@ public class App {
                 System.out.println("3. Cancel Matches at a Facility");
                 System.out.println("4. Create a Home League at a Facility (Adds all home teams)");
                 System.out.println("5. Update match details");
+                System.out.println("6. Update League Status");
                 System.out.print("Enter your choice (input a number 1 through 6): ");
 
                 int choice = scanner.nextInt();
@@ -58,6 +59,10 @@ public class App {
                     case 5:
                         updateMatchResults(connection, scanner);
                         break;
+                    case 6:
+                        updateLeagueStatus(connection, scanner);
+                        break;
+                    
                     default:
                         System.out.println("Invalid choice. Please try again.");
                         break;
