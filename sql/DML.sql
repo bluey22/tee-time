@@ -61,6 +61,7 @@ BEGIN
         END CATCH;
     END;
 END;
+GO
 
 -- -------------------- Use Case 2: Cancelling a player membership ------------------------------
 CREATE PROCEDURE CancelPlayerMembership
@@ -87,6 +88,7 @@ FROM facility f
          JOIN membership m ON f.facility_id = m.facility_id
 WHERE m.membership_id = @membership_id;
 END;
+GO
 
 -- --------------------- Use Case 3: Match Cancellation (Case #13 in doc2) --------------------------------
 CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
@@ -229,3 +231,4 @@ SET NOCOUNT ON;
         THROW;
     END CATCH;
 END
+GO
