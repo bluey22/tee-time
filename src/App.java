@@ -557,8 +557,7 @@ private static void cancelMatchesAtFacility(Connection connection, Scanner scann
         }
     }
 
-    // Use Case 7: Update League Status (all‐status workflow)
-// Use Case 7: Update League Status (with final team scores)
+   // Use Case 7: Update League Status (with handicap‑adjusted final standings)
 private static void updateLeagueStatus(Connection connection, Scanner scanner) {
     System.out.println("\n=== Update League Status ===");
     System.out.print("Enter League ID: ");
@@ -646,7 +645,7 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
             ps.executeUpdate();
         }
 
-        // 4) Display the updated league row
+        // 4) Show the updated league
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT league_id, name, city, state, zip, skill_level, status, start_date, end_date, max_teams "
               + "FROM league WHERE league_id = ?")) {
@@ -656,9 +655,9 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
                     System.out.println("\n--- League Updated ---");
                     System.out.println("League ID:   " + rs.getInt("league_id"));
                     System.out.println("Name:        " + rs.getString("name"));
-                    System.out.println("Location:    " 
-                        + rs.getString("city") + ", " 
-                        + rs.getString("state") + " " 
+                    System.out.println("Location:    "
+                        + rs.getString("city") + ", "
+                        + rs.getString("state") + " "
                         + rs.getString("zip"));
                     System.out.println("Skill Level: " + rs.getString("skill_level"));
                     System.out.println("Status:      " + rs.getString("status"));
@@ -671,32 +670,45 @@ private static void updateLeagueStatus(Connection connection, Scanner scanner) {
             }
         }
 
-        // 5) If we've just moved to "Completed", show final team scores
+        // 5) If we just moved to "Completed", print net‑points standings
         if ("Completed".equals(nextStatus)) {
-            System.out.println("\n--- Final Standings (Total Points) ---");
+            System.out.println("\n--- Final Standings (Net Points) ---");
             String standingsSql =
-              "SELECT t.team_id, t.name AS team_name, "
-            + "       ISNULL(SUM(gt.score),0) AS total_score "
-            + "  FROM league_team lt "
-            + "  JOIN team t ON lt.team_id = t.team_id "
-            + "  LEFT JOIN game_team gt "
-            + "    ON gt.team_id = t.team_id "
+              "SELECT"
+            + "  t.team_id,"
+            + "  t.name AS team_name,"
+            + "  SUM(gt.score)         AS raw_points,"
+            + "  SUM(p.handicap)       AS total_handicap,"
+            + "  SUM(gt.score) - SUM(p.handicap) AS net_points"
+            + " FROM league_team lt"
+            + " JOIN team t"
+            + "   ON lt.team_id = t.team_id"
+            + " LEFT JOIN game_team gt"
+            + "   ON gt.team_id = t.team_id"
             + "   AND gt.game_id IN ("
-            + "       SELECT game_id FROM game "
+            + "       SELECT game_id FROM game"
             + "        WHERE league_id = ? AND status = 'Completed'"
-            + "     ) "
-            + " WHERE lt.league_id = ? "
-            + " GROUP BY t.team_id, t.name "
-            + " ORDER BY total_score DESC";
+            + "     )"
+            + " JOIN team_player tp"
+            + "   ON tp.team_id = t.team_id"
+            + " JOIN player p"
+            + "   ON p.player_id = tp.player_id"
+            + " WHERE lt.league_id = ?"
+            + " GROUP BY t.team_id, t.name"
+            + " ORDER BY net_points DESC";
+
             try (PreparedStatement ps = connection.prepareStatement(standingsSql)) {
                 ps.setInt(1, leagueId);
                 ps.setInt(2, leagueId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        System.out.printf("Team %-3d %-20s : %4d points%n",
+                        System.out.printf(
+                          "Team %-3d %-20s  Raw:%4d  Hcap:%5.1f  Net:%5.1f%n",
                           rs.getInt("team_id"),
                           rs.getString("team_name"),
-                          rs.getInt("total_score")
+                          rs.getInt("raw_points"),
+                          rs.getDouble("total_handicap"),
+                          rs.getDouble("net_points")
                         );
                     }
                 }

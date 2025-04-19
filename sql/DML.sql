@@ -301,6 +301,48 @@ BEGIN
 END;
 GO
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Trigger: When a league goes “In Season”, recalc handicaps for its players
+CREATE OR ALTER TRIGGER trg_RecalcHandicapOnLeagueStart
+ON league
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Only proceed if the status column was changed to 'In Season'
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted  d ON i.league_id = d.league_id
+        WHERE i.status = 'In Season'
+          AND d.status <> 'In Season'
+    )
+    BEGIN
+        -- For each player in the league, compute their new handicap:
+        --   AVG(score) from COMPLETED matches across *all* their teams in this league minus 72.
+        ;WITH PlayerNewHandicaps AS (
+            SELECT
+                tp.player_id,
+                AVG(CAST(gt.score AS DECIMAL(5,2))) - 72.0 AS new_handicap
+            FROM inserted i
+            JOIN league_team  lt ON lt.league_id = i.league_id
+            JOIN team_player  tp ON tp.team_id    = lt.team_id
+            JOIN game_team    gt ON gt.team_id     = tp.team_id
+            JOIN game         g  ON g.game_id      = gt.game_id
+            WHERE g.status = 'Completed'
+              AND g.date_time < GETDATE()
+            GROUP BY tp.player_id
+        )
+        UPDATE p
+        SET p.handicap = ph.new_handicap
+        FROM player p
+        JOIN PlayerNewHandicaps ph
+          ON p.player_id = ph.player_id;
+    END
+END;
+GO
+
 
 -- ----------------------------- Helpful Stored Procedures (No Use Cases, skip down for next use cases) ----------------------------
 CREATE OR ALTER PROCEDURE GetPlayersWithTeamInfo
