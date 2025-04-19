@@ -94,3 +94,105 @@ INSERT INTO game_team (game_id, team_id, score)
 VALUES
 (1, 1, 42), -- Birdie Bandits score
 (1, 2, 39); -- Holy Strokes score
+
+-- 1. Setup test data
+-- Create test facility if it doesn't exist (using allowed name 'TopGolf')
+IF NOT EXISTS (SELECT 1 FROM facility WHERE name = 'TopGolf' AND city = 'TestCity')
+BEGIN
+INSERT INTO facility (name, address, city, [state], zip, phone, website, opening_time, closing_time, number_of_bays)
+VALUES ('TopGolf', '123 Test St', 'TestCity', 'TestState', '12345', '555-123-4567', 'www.test.com', '08:00', '22:00', 30);
+END
+
+-- Get facility ID
+DECLARE @TestFacilityID INT;
+SELECT @TestFacilityID = facility_id FROM facility WHERE name = 'TopGolf' AND city = 'TestCity';
+
+-- Create test teams
+IF NOT EXISTS (SELECT 1 FROM team WHERE name = 'Handicap Test Team A')
+BEGIN
+INSERT INTO team (name, creation_date, home_facility_id)
+VALUES ('Handicap Test Team A', GETDATE(), @TestFacilityID);
+END
+
+IF NOT EXISTS (SELECT 1 FROM team WHERE name = 'Handicap Test Team B')
+BEGIN
+INSERT INTO team (name, creation_date, home_facility_id)
+VALUES ('Handicap Test Team B', GETDATE(), @TestFacilityID);
+END
+
+-- Get team IDs
+DECLARE @TeamA_ID INT, @TeamB_ID INT;
+SELECT @TeamA_ID = team_id FROM team WHERE name = 'Handicap Test Team A';
+SELECT @TeamB_ID = team_id FROM team WHERE name = 'Handicap Test Team B';
+
+-- Create test players with initial handicaps
+IF NOT EXISTS (SELECT 1 FROM player WHERE email = 'playerA1@test.com')
+BEGIN
+INSERT INTO player (first_name, last_name, email, phone_number, age, [state], city, zip, skill_level, handicap, join_date, profile_type)
+VALUES ('Player', 'A1', 'playerA1@test.com', '555-111-1111', 30, 'TestState', 'TestCity', '12345', 'Intermediate', 15.0, GETDATE(), 'Public');
+END
+
+IF NOT EXISTS (SELECT 1 FROM player WHERE email = 'playerA2@test.com')
+BEGIN
+INSERT INTO player (first_name, last_name, email, phone_number, age, [state], city, zip, skill_level, handicap, join_date, profile_type)
+VALUES ('Player', 'A2', 'playerA2@test.com', '555-111-2222', 35, 'TestState', 'TestCity', '12345', 'Advanced', 8.5, GETDATE(), 'Public');
+END
+
+IF NOT EXISTS (SELECT 1 FROM player WHERE email = 'playerB1@test.com')
+BEGIN
+INSERT INTO player (first_name, last_name, email, phone_number, age, [state], city, zip, skill_level, handicap, join_date, profile_type)
+VALUES ('Player', 'B1', 'playerB1@test.com', '555-222-1111', 28, 'TestState', 'TestCity', '12345', 'Intermediate', 12.0, GETDATE(), 'Public');
+END
+
+IF NOT EXISTS (SELECT 1 FROM player WHERE email = 'playerB2@test.com')
+BEGIN
+INSERT INTO player (first_name, last_name, email, phone_number, age, [state], city, zip, skill_level, handicap, join_date, profile_type)
+VALUES ('Player', 'B2', 'playerB2@test.com', '555-222-2222', 40, 'TestState', 'TestCity', '12345', 'Beginner', 18.5, GETDATE(), 'Public');
+END
+
+-- Get player IDs
+DECLARE @PlayerA1_ID INT, @PlayerA2_ID INT, @PlayerB1_ID INT, @PlayerB2_ID INT;
+SELECT @PlayerA1_ID = player_id FROM player WHERE email = 'playerA1@test.com';
+SELECT @PlayerA2_ID = player_id FROM player WHERE email = 'playerA2@test.com';
+SELECT @PlayerB1_ID = player_id FROM player WHERE email = 'playerB1@test.com';
+SELECT @PlayerB2_ID = player_id FROM player WHERE email = 'playerB2@test.com';
+
+-- Add players to teams
+IF NOT EXISTS (SELECT 1 FROM team_player WHERE player_id = @PlayerA1_ID AND team_id = @TeamA_ID)
+BEGIN
+INSERT INTO team_player (player_id, team_id, join_date, position)
+VALUES (@PlayerA1_ID, @TeamA_ID, GETDATE(), 'Captain');
+END
+
+IF NOT EXISTS (SELECT 1 FROM team_player WHERE player_id = @PlayerA2_ID AND team_id = @TeamA_ID)
+BEGIN
+INSERT INTO team_player (player_id, team_id, join_date, position)
+VALUES (@PlayerA2_ID, @TeamA_ID, GETDATE(), 'Member');
+END
+
+IF NOT EXISTS (SELECT 1 FROM team_player WHERE player_id = @PlayerB1_ID AND team_id = @TeamB_ID)
+BEGIN
+INSERT INTO team_player (player_id, team_id, join_date, position)
+VALUES (@PlayerB1_ID, @TeamB_ID, GETDATE(), 'Captain');
+END
+
+IF NOT EXISTS (SELECT 1 FROM team_player WHERE player_id = @PlayerB2_ID AND team_id = @TeamB_ID)
+BEGIN
+INSERT INTO team_player (player_id, team_id, join_date, position)
+VALUES (@PlayerB2_ID, @TeamB_ID, GETDATE(), 'Member');
+END
+
+-- Create a new game
+DECLARE @TestGameID INT;
+
+INSERT INTO game (facility_id, date_time, status, game_type, league_id)
+VALUES (@TestFacilityID, GETDATE(), 'Scheduled', 'Handicap Test Match', NULL);
+
+SET @TestGameID = SCOPE_IDENTITY();
+
+-- Add teams to the game
+INSERT INTO game_team (game_id, team_id, score)
+VALUES (@TestGameID, @TeamA_ID, NULL);
+
+INSERT INTO game_team (game_id, team_id, score)
+VALUES (@TestGameID, @TeamB_ID, NULL);
