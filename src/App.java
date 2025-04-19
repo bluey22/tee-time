@@ -239,73 +239,127 @@ public class App {
 
 
 
-    // Use Case 3
-    private static void cancelMatchesAtFacility(Connection connection, Scanner scanner) {
-        System.out.println("\n=== Cancel Matches at a Facility ===");
-        System.out.print("Enter the facility id (as an integer): ");
-        int facilityId;
-        try {
-            facilityId = Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid facility id. Exiting...");
+// Use Case 3 (with Completed‑status check)
+private static void cancelMatchesAtFacility(Connection connection, Scanner scanner) {
+    System.out.println("\n=== Cancel a Specific Match at a Facility ===");
+    System.out.print("Enter the facility id (as an integer): ");
+    int facilityId;
+    try {
+        facilityId = Integer.parseInt(scanner.nextLine().trim());
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid facility id. Exiting...");
+        return;
+    }
+
+    System.out.print("Enter the match id (as an integer): ");
+    int matchId;
+    try {
+        matchId = Integer.parseInt(scanner.nextLine().trim());
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid match id. Exiting...");
+        return;
+    }
+
+    System.out.print("Enter reason for cancellation: ");
+    String reason = scanner.nextLine().trim();
+
+    String checkSql = 
+        "SELECT status " +
+        "  FROM game " +
+        " WHERE game_id     = ? " +
+        "   AND facility_id = ?";
+    String updateSql = 
+        "UPDATE game " +
+        "   SET status = 'Cancelled' " +
+        " WHERE facility_id = ? " +
+        "   AND game_id     = ? " +
+        "   AND status      = 'Scheduled'";
+    String selectSql =
+        "SELECT game_id, league_id, facility_id, date_time, status, game_type " +
+        "  FROM game " +
+        " WHERE game_id = ?";
+
+    try {
+        connection.setAutoCommit(false);
+
+        // 1) Pre‑check: does the match exist, and what's its status?
+        String currentStatus;
+        try (PreparedStatement chk = connection.prepareStatement(checkSql)) {
+            chk.setInt(1, matchId);
+            chk.setInt(2, facilityId);
+            try (ResultSet rs = chk.executeQuery()) {
+                if (!rs.next()) {
+                    System.out.println("No match found for facility " 
+                        + facilityId + " with match ID " + matchId);
+                    connection.rollback();
+                    return;
+                }
+                currentStatus = rs.getString("status");
+            }
+        }
+
+        // 2) If it's already completed, error out
+        if ("Completed".equalsIgnoreCase(currentStatus)) {
+            System.out.println("Cannot cancel: match #" + matchId 
+                + " has already been completed.");
+            connection.rollback();
             return;
         }
 
-        System.out.print("Enter reason for cancellation: ");
-        String reason = scanner.nextLine().trim();
+        // 3) Proceed only if it was Scheduled
+        int affected;
+        try (PreparedStatement upd = connection.prepareStatement(updateSql)) {
+            upd.setInt(1, facilityId);
+            upd.setInt(2, matchId);
+            affected = upd.executeUpdate();
+        }
 
-        String callProc = "{? = call dbo.CancelMatchesAtFacility(?, ?)}";
-        try (CallableStatement stmt = connection.prepareCall(callProc)) {
-            connection.setAutoCommit(false);
+        if (affected == 0) {
+            // could happen if status was neither Scheduled nor Completed (e.g. already Cancelled)
+            System.out.println("No scheduled match to cancel (status=" 
+                + currentStatus + ").");
+            connection.rollback();
+            return;
+        }
 
-            // register and set parameters
-            stmt.registerOutParameter(1, Types.INTEGER);
-            stmt.setInt(2, facilityId);
-            stmt.setString(3, reason);
-
-            stmt.execute();
-            int returnCode = stmt.getInt(1);
-            if (returnCode == -1) {
-                System.out.println("Error: Facility not found or database error.");
-                connection.rollback();
-                return;
-            }
-
-            // read and display the facility + reason
-            ResultSet rs = stmt.getResultSet();
-            if (rs != null && rs.next()) {
-                System.out.println("\nFacility cancellation details:");
-                System.out.println("Facility ID: " + rs.getInt("facility_id"));
-                System.out.println("Name:        " + rs.getString("name"));
-                System.out.println("Address:     " + rs.getString("address"));
-                System.out.println("City:        " + rs.getString("city"));
-                System.out.println("State:       " + rs.getString("state"));
-                System.out.println("ZIP:         " + rs.getString("zip"));
-                System.out.println("Phone:       " + rs.getString("phone"));
-                System.out.println("Website:     " + rs.getString("website"));
-                System.out.println("Reason:      " + rs.getString("cancellation_reason"));
-                System.out.println("\nAll scheduled matches at this facility have been cancelled.");
-            } else {
-                System.out.println("No facility information returned.");
-            }
-
-            connection.commit();
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e.getMessage());
-            try {
-                connection.rollback();
-                System.out.println("Transaction rolled back.");
-            } catch (SQLException ex) {
-                System.out.println("Rollback failed: " + ex.getMessage());
-            }
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException e) {
-                System.out.println("Failed to reset auto-commit: " + e.getMessage());
+        // 4) Retrieve and display the now‑cancelled match
+        try (PreparedStatement sel = connection.prepareStatement(selectSql)) {
+            sel.setInt(1, matchId);
+            try (ResultSet rs = sel.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("\n--- Cancelled Match Details ---");
+                    System.out.println("Match ID:    " + rs.getInt("game_id"));
+                    System.out.println("League ID:   " + rs.getInt("league_id"));
+                    System.out.println("Facility ID: " + rs.getInt("facility_id"));
+                    System.out.println("Date/Time:   " + rs.getTimestamp("date_time"));
+                    System.out.println("Status:      " + rs.getString("status"));
+                    System.out.println("Game Type:   " + rs.getString("game_type"));
+                    System.out.println("Reason:      " + reason);
+                } else {
+                    System.out.println("Match record not found after cancellation.");
+                }
             }
         }
+
+        connection.commit();
+    } catch (SQLException e) {
+        System.out.println("Database error: " + e.getMessage());
+        try {
+            connection.rollback();
+            System.out.println("Transaction rolled back.");
+        } catch (SQLException ex) {
+            System.out.println("Rollback failed: " + ex.getMessage());
+        }
+    } finally {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            System.out.println("Failed to reset auto-commit: " + e.getMessage());
+        }
     }
+}
+
+
 
     // Use case 4:
     // - e.g., Register everyone at Top Golf (1) to an Advanced league starting now, ending 2025-07-31, RR
@@ -502,77 +556,172 @@ public class App {
             e.printStackTrace();
         }
     }
-    private static void updateLeagueStatus(Connection connection, Scanner scanner) {
-        System.out.println("\n=== Update League Status ===");
-        System.out.print("Enter League ID: ");
-        int leagueId;
-        try {
-            leagueId = Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid League ID. Exiting...");
-            return;
-        }
-    
-        String callProc = "{? = call dbo.UpdateLeagueStatus(?)}";
-        try (CallableStatement stmt = connection.prepareCall(callProc)) {
-            connection.setAutoCommit(false);
-    
-            // register return code
-            stmt.registerOutParameter(1, Types.INTEGER);
-            stmt.setInt(2, leagueId);
-    
-            // execute
-            stmt.execute();
-            int rc = stmt.getInt(1);
-            if (rc == -1) {
-                System.out.println("Error: League not found.");
-                connection.rollback();
-                return;
-            } else if (rc == -2) {
-                System.out.println("Cannot update: not all teams have joined yet.");
-                connection.rollback();
-                return;
+
+    // Use Case 7: Update League Status (all‐status workflow)
+// Use Case 7: Update League Status (with final team scores)
+private static void updateLeagueStatus(Connection connection, Scanner scanner) {
+    System.out.println("\n=== Update League Status ===");
+    System.out.print("Enter League ID: ");
+    int leagueId;
+    try {
+        leagueId = Integer.parseInt(scanner.nextLine().trim());
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid League ID. Exiting...");
+        return;
+    }
+
+    try {
+        connection.setAutoCommit(false);
+
+        // 1) Fetch current status + max_teams
+        String fetchSql = "SELECT status, max_teams FROM league WHERE league_id = ?";
+        String currentStatus;
+        int maxTeams;
+        try (PreparedStatement ps = connection.prepareStatement(fetchSql)) {
+            ps.setInt(1, leagueId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    System.out.println("League not found.");
+                    connection.rollback();
+                    return;
+                }
+                currentStatus = rs.getString("status");
+                maxTeams      = rs.getInt("max_teams");
             }
-    
-            // read the updated league row
-            try (ResultSet rs = stmt.getResultSet()) {
-                if (rs != null && rs.next()) {
-                    System.out.println("\n--- League Details ---");
-                    System.out.println("League ID:     " + rs.getInt("league_id"));
-                    System.out.println("Name:          " + rs.getString("name"));
-                    System.out.println("Location:      " 
+        }
+
+        // 2) Decide next status
+        String nextStatus;
+        switch (currentStatus) {
+            case "Setting Up":
+                // only go In Season if all teams have joined
+                int joinedCount;
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "SELECT COUNT(*) FROM league_team WHERE league_id = ?")) {
+                    ps.setInt(1, leagueId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        rs.next();
+                        joinedCount = rs.getInt(1);
+                    }
+                }
+                if (joinedCount < maxTeams) {
+                    System.out.printf(
+                      "Cannot move to In Season: %d of %d teams have joined.%n",
+                      joinedCount, maxTeams
+                    );
+                    connection.rollback();
+                    return;
+                }
+                nextStatus = "In Season";
+                break;
+
+            case "In Season":
+                nextStatus = "Playoffs";
+                break;
+
+            case "Playoffs":
+                nextStatus = "Completed";
+                break;
+
+            case "Paused":
+                nextStatus = "In Season";
+                break;
+
+            case "Completed":
+                System.out.println("League is already Completed; no further transition.");
+                connection.rollback();
+                return;
+
+            default:
+                System.out.println("Unknown status: " + currentStatus);
+                connection.rollback();
+                return;
+        }
+
+        // 3) Apply the status update
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE league SET status = ? WHERE league_id = ?")) {
+            ps.setString(1, nextStatus);
+            ps.setInt(2,    leagueId);
+            ps.executeUpdate();
+        }
+
+        // 4) Display the updated league row
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT league_id, name, city, state, zip, skill_level, status, start_date, end_date, max_teams "
+              + "FROM league WHERE league_id = ?")) {
+            ps.setInt(1, leagueId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("\n--- League Updated ---");
+                    System.out.println("League ID:   " + rs.getInt("league_id"));
+                    System.out.println("Name:        " + rs.getString("name"));
+                    System.out.println("Location:    " 
                         + rs.getString("city") + ", " 
                         + rs.getString("state") + " " 
                         + rs.getString("zip"));
-                    System.out.println("Skill Level:   " + rs.getString("skill_level"));
-                    System.out.println("Status:        " + rs.getString("status"));
-                    System.out.println("Start Date:    " + rs.getDate("start_date"));
-                    System.out.println("End Date:      " + rs.getDate("end_date"));
-                    System.out.println("Max Teams:     " + rs.getInt("max_teams"));
-                    System.out.println("Teams Joined:  " + rs.getInt("teams_joined"));
-                    System.out.println("\nLeague is now In Season!");
-                } else {
-                    System.out.println("No data returned after update.");
+                    System.out.println("Skill Level: " + rs.getString("skill_level"));
+                    System.out.println("Status:      " + rs.getString("status"));
+                    System.out.println("Start Date:  " + rs.getDate("start_date"));
+                    System.out.println("End Date:    " + rs.getDate("end_date"));
+                    System.out.println("Max Teams:   " + rs.getInt("max_teams"));
+                    System.out.printf("Transitioned from \"%s\" to \"%s\".%n",
+                                      currentStatus, nextStatus);
                 }
             }
-    
-            connection.commit();
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e.getMessage());
-            try {
-                connection.rollback();
-                System.out.println("Rolled back.");
-            } catch (SQLException ex) {
-                System.out.println("Rollback failed: " + ex.getMessage());
-            }
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException e) {
-                System.out.println("Couldn't reset auto-commit: " + e.getMessage());
+        }
+
+        // 5) If we've just moved to "Completed", show final team scores
+        if ("Completed".equals(nextStatus)) {
+            System.out.println("\n--- Final Standings (Total Points) ---");
+            String standingsSql =
+              "SELECT t.team_id, t.name AS team_name, "
+            + "       ISNULL(SUM(gt.score),0) AS total_score "
+            + "  FROM league_team lt "
+            + "  JOIN team t ON lt.team_id = t.team_id "
+            + "  LEFT JOIN game_team gt "
+            + "    ON gt.team_id = t.team_id "
+            + "   AND gt.game_id IN ("
+            + "       SELECT game_id FROM game "
+            + "        WHERE league_id = ? AND status = 'Completed'"
+            + "     ) "
+            + " WHERE lt.league_id = ? "
+            + " GROUP BY t.team_id, t.name "
+            + " ORDER BY total_score DESC";
+            try (PreparedStatement ps = connection.prepareStatement(standingsSql)) {
+                ps.setInt(1, leagueId);
+                ps.setInt(2, leagueId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        System.out.printf("Team %-3d %-20s : %4d points%n",
+                          rs.getInt("team_id"),
+                          rs.getString("team_name"),
+                          rs.getInt("total_score")
+                        );
+                    }
+                }
             }
         }
+
+        connection.commit();
+    } catch (SQLException e) {
+        System.out.println("Database error: " + e.getMessage());
+        try {
+            connection.rollback();
+            System.out.println("Rolled back.");
+        } catch (SQLException ex) {
+            System.out.println("Rollback failed: " + ex.getMessage());
+        }
+    } finally {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            System.out.println("Couldn't reset auto-commit: " + e.getMessage());
+        }
     }
+}
+
+
     
 
 }

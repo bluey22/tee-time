@@ -1,16 +1,16 @@
 -- Defines all the relations for Tee-Time along with key constraints and secondary indices
 
 -- 1. Drop all tables first (in reverse order in case of FK constraints)
-DROP TABLE IF EXISTS GameTeam;
-DROP TABLE IF EXISTS Game;
-DROP TABLE IF EXISTS PlayerMembership;
-DROP TABLE IF EXISTS Membership;
-DROP TABLE IF EXISTS LeagueTeam;
-DROP TABLE IF EXISTS League;
-DROP TABLE IF EXISTS TeamPlayer;
-DROP TABLE IF EXISTS Team;
-DROP TABLE IF EXISTS Facility;
-DROP TABLE IF EXISTS Player;
+DROP TABLE IF EXISTS game_team;
+DROP TABLE IF EXISTS game;
+DROP TABLE IF EXISTS player_membership;
+DROP TABLE IF EXISTS membership;
+DROP TABLE IF EXISTS league_team;
+DROP TABLE IF EXISTS league;
+DROP TABLE IF EXISTS team_player;
+DROP TABLE IF EXISTS team;
+DROP TABLE IF EXISTS facility;
+DROP TABLE IF EXISTS player;
 
 
 -- 2. Define all tables
