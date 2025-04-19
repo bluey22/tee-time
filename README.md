@@ -7,7 +7,6 @@ The workspace contains two folders by default, where:
 
 - `src`: source code for Java CLI
 - `sql`: source code for SQL
-- `lib`: the folder to maintain dependencies
 
 Meanwhile, the compiled output files will be generated in the `bin` folder by default.
 
