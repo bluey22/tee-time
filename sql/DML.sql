@@ -64,7 +64,7 @@ END;
 GO
 
 -- -------------------- Use Case 2: Cancelling a player membership ------------------------------
-CREATE PROCEDURE CancelPlayerMembership
+CREATE OR ALTER PROCEDURE CancelPlayerMembership
     @player_id INT,
     @membership_id INT
 AS
@@ -98,6 +98,7 @@ FROM facility f
          JOIN membership m ON f.facility_id = m.facility_id
 WHERE m.membership_id = @membership_id;
 END;
+GO
 
 -- --------------------- Use Case 3: Match Cancellation (Case #13 in doc2) --------------------------------
 CREATE OR ALTER PROCEDURE CancelMatchesAtFacility
@@ -244,7 +245,7 @@ GO
 
 
 -- ----------------------------- Helpful Stored Procedures (No Use Cases) ----------------------------
-CREATE PROCEDURE GetPlayersWithTeamInfo
+CREATE OR ALTER PROCEDURE GetPlayersWithTeamInfo
     AS
 BEGIN
     SET NOCOUNT ON;
@@ -276,77 +277,7 @@ ORDER BY
 END
 GO
 
-CREATE PROCEDURE GetTeamsWithLeagueInfo
-    @LeagueId INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-SELECT
-    l.league_id,
-    l.name AS league_name,
-    l.state,
-    l.city,
-    l.skill_level AS league_skill_level,
-    l.status AS league_status,
-    l.start_date,
-    l.end_date,
-    t.team_id,
-    t.name AS team_name,
-    t.creation_date,
-    f.facility_id,
-    f.name AS facility_name,
-    lt.join_date AS league_join_date
-FROM
-    league l
-        LEFT JOIN
-    league_team lt ON l.league_id = lt.league_id
-        LEFT JOIN
-    team t ON lt.team_id = t.team_id
-        LEFT JOIN
-    facility f ON t.home_facility_id = f.facility_id
-WHERE
-    (@LeagueId IS NULL OR l.league_id = @LeagueId)
-ORDER BY
-    l.name, t.name;
-END
-GO
-
-
--- ----------------------------- Helpful Stored Procedures (No Use Cases) ----------------------------
-CREATE PROCEDURE GetPlayersWithTeamInfo
-    AS
-BEGIN
-    SET NOCOUNT ON;
-
-SELECT
-    p.player_id,
-    p.first_name,
-    p.last_name,
-    p.email,
-    p.phone_number,
-    p.skill_level,
-    p.handicap,
-    t.team_id,
-    t.name AS team_name,
-    t.creation_date AS team_creation_date,
-    f.name AS facility_name,
-    tp.join_date AS team_join_date,
-    tp.position AS team_position
-FROM
-    player p
-        LEFT JOIN
-    team_player tp ON p.player_id = tp.player_id
-        LEFT JOIN
-    team t ON tp.team_id = t.team_id
-        LEFT JOIN
-    facility f ON t.home_facility_id = f.facility_id
-ORDER BY
-    p.last_name, p.first_name;
-END
-GO
-
-CREATE PROCEDURE GetTeamsWithLeagueInfo
+CREATE OR ALTER PROCEDURE GetTeamsWithLeagueInfo
     @LeagueId INT = NULL
 AS
 BEGIN
@@ -516,7 +447,7 @@ BEGIN
             RETURN;
 END
 
-        -- Update the scores for both teams
+-- Update the scores for both teams
 UPDATE game_team
 SET score = @Team1Score
 WHERE game_id = @GameID AND team_id = @Team1ID;
@@ -575,6 +506,7 @@ IF @@TRANCOUNT > 0
         RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
 END CATCH
 END;
+GO
 
 -- Create a trigger that updates player handicaps after a game is completed
 CREATE OR ALTER TRIGGER trg_UpdatePlayerHandicap

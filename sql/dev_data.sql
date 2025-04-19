@@ -17,7 +17,11 @@ DBCC CHECKIDENT ('game', RESEED, 0)
 INSERT INTO facility (name, address, city, state, zip, phone, website, opening_time, closing_time, number_of_bays)
 VALUES
 ('TopGolf', '5820 Rockside Woods Blvd', 'Cleveland', 'Ohio', '44131', '216-555-1234', 'www.topgolf.com/cleveland', '09:00:00', '23:00:00', 102),
-('Five Iron', '2000 East 9th Street', 'Cleveland', 'Ohio', '44115', '216-555-5678', 'www.fiveirongolf.com/cleveland', '07:00:00', '22:00:00', 14),
+('Five Iron', '2000 East 9th Street', 'Cleveland', 'Ohio', '44115', '216-555-5678', 'www.fiveirongolf.com/cleveland', '07:00:00', '22:00:00', 14);
+
+-- Create additional facilities
+INSERT INTO facility (name, address, city, state, zip, phone, website, opening_time, closing_time, number_of_bays)
+VALUES
 ('TopGolf', '123 Main St',         'Cleveland', 'Ohio', '44132', '216-101-0001', 'www.topgolf.com/cleveland-east', '08:00:00', '22:00:00',  50),
 ('Five Iron', '456 Oak Ave',        'Cleveland', 'Ohio', '44133', '216-101-0002', 'www.fiveirongolf.com/cleveland-west','09:00:00','21:00:00',  12),
 ('TopGolf', '789 Elm Blvd',         'Cleveland', 'Ohio', '44134', '216-101-0003', 'www.topgolf.com/cleveland-north','10:00:00','20:00:00',  60),
@@ -80,11 +84,11 @@ VALUES
 (7, 1, '2023-12-15', '2024-12-15', 'Completed'), -- Rory has TopGolf Platinum
 (8, 1, '2024-01-20', '2025-01-20', 'Completed'), -- Min Woo has TopGolf Platinum
 (9, 2, '2024-02-25', '2025-02-25', 'Completed'), -- LeBron has TopGolf Gold
-(10,  5, '2024-03-05', '2025-03-05', 'Scheduled'),
-(11,  6, '2024-03-06', '2025-03-06', 'Scheduled'),
-(12,  7, '2024-03-07', '2025-03-07', 'Scheduled'),
-(13,  8, '2024-03-08', '2025-03-08', 'Scheduled'),
-(14,  9, '2024-03-09', '2025-03-09', 'Scheduled'),
+(10, 5, '2024-03-05', '2025-03-05', 'Scheduled'),
+(11, 6, '2024-03-06', '2025-03-06', 'Scheduled'),
+(12, 7, '2024-03-07', '2025-03-07', 'Scheduled'),
+(13, 8, '2024-03-08', '2025-03-08', 'Scheduled'),
+(14, 9, '2024-03-09', '2025-03-09', 'Scheduled'),
 (15, 10, '2024-03-10', '2025-03-10', 'Scheduled'),
 (16, 11, '2024-03-11', '2025-03-11', 'Scheduled'),
 (17, 12, '2024-03-12', '2025-03-12', 'Scheduled'),
@@ -105,15 +109,11 @@ VALUES
 ('Fairway Fanatics',      '2024-03-05', 7),
 ('Rough Riders',          '2024-03-06', 8),
 ('Birdie Hunters',        '2024-03-07', 9),
-('Eagle Eyes',            '2024-03-08',10),
-('Putt Masters',          '2024-03-09',11),
-('Chip Shot Champions',   '2024-03-10',12);
+('Eagle Eyes',            '2024-03-08', 10),
+('Putt Masters',          '2024-03-09', 11),
+('Chip Shot Champions',   '2024-03-10', 12);
 
--- Assign players to teams
--- Team 1: Dorian (Captain) and William
--- Team 2: Ben (Captain) and Timothy
--- Team 3: Rory (Captain) and Min Woo
--- Team 4: LeBron (Captain) and Tiger
+-- Assign players to teams - Only team_ids 1-14 are valid
 INSERT INTO team_player (player_id, team_id, join_date, position)
 VALUES
 (1, 1, '2023-07-01', 'Captain'),
@@ -122,21 +122,22 @@ VALUES
 (4, 2, '2023-07-20', 'Member'),
 (9, 4, '2024-02-10', 'Captain'),
 (6, 4, '2024-02-15', 'Member'),
-(5,  1, '2024-04-01', 'Member'),  -- to Team 1
-(6,  2, '2024-04-01', 'Member'),  -- to Team 2
-(7,  3, '2024-04-01', 'Member'),  -- to Team 3
-(8,  4, '2024-04-01', 'Member'),  -- to Team 4
-(9,  5, '2024-04-01', 'Member'),  -- to Team 5
+(5, 1, '2024-04-01', 'Member'),  -- to Team 1
+(6, 2, '2024-04-01', 'Member'),  -- to Team 2
+(7, 3, '2024-04-01', 'Member'),  -- to Team 3
+(8, 4, '2024-04-01', 'Member'),  -- to Team 4
+(9, 5, '2024-04-01', 'Member'),  -- to Team 5
 (10, 6, '2024-04-01', 'Member'),  -- to Team 6
 (11, 7, '2024-04-01', 'Member'),  -- to Team 7
 (12, 8, '2024-04-01', 'Member'),  -- to Team 8
 (13, 9, '2024-04-01', 'Member'),  -- to Team 9
-(14,10, '2024-04-01', 'Member'),  -- to Team 10
-(15,11, '2024-04-01', 'Member'),  -- to Team 11
-(16,12, '2024-04-01', 'Member'),  -- to Team 12
-(17,13, '2024-04-01', 'Member'),  -- to Team 13
-(18,14, '2024-04-01', 'Member');  -- to Team 14
--- Create a league
+(14, 10, '2024-04-01', 'Member'),  -- to Team 10
+(15, 11, '2024-04-01', 'Member'),  -- to Team 11
+(16, 12, '2024-04-01', 'Member'),  -- to Team 12
+(17, 13, '2024-04-01', 'Member'),  -- to Team 13
+(18, 14, '2024-04-01', 'Member');  -- to Team 14
+
+-- Create leagues
 INSERT INTO league (name, state, city, zip, skill_level, status, start_date, end_date, max_teams, league_format)
 VALUES
 ('Cleveland Metro Golf League', 'Ohio', 'Cleveland', '44115', 'Intermediate', 'In Season', '2023-08-01', '2023-10-30', 8, 'Round Robin'),
@@ -163,73 +164,101 @@ VALUES
 (1, 7, '2024-04-02'),
 (1, 8, '2024-04-02'),
 (6, 9, '2024-03-09'),
-(7,10, '2024-03-10'),
-(8,11, '2024-03-11'),
-(9,12, '2024-03-12'),
-(10,13,'2024-03-13'),
-(11,14,'2024-03-14'),
+(7, 10, '2024-03-10'),
+(8, 11, '2024-03-11'),
+(9, 12, '2024-03-12'),
+(10, 13, '2024-03-13'),
+(11, 14, '2024-03-14');
 
+-- Add teams to additional leagues - Only team_ids 1-14 are valid
+INSERT INTO league_team (league_id, team_id, join_date)
+VALUES
 -- League 4: Autumn Cup (max_teams = 10)
-  (4,  1, '2024-04-05'), (4,  2, '2024-04-05'),
-  (4,  3, '2024-04-05'), (4,  4, '2024-04-05'),
-  (4,  5, '2024-04-05'), (4,  6, '2024-04-05'),
-  (4,  7, '2024-04-05'), (4,  8, '2024-04-05'),
-  (4,  9, '2024-04-05'), (4, 10, '2024-04-05'),
+(4, 1, '2024-04-05'), 
+(4, 2, '2024-04-05'),
+(4, 3, '2024-04-05'), 
+(4, 4, '2024-04-05'),
+(4, 5, '2024-04-05'), 
+(4, 6, '2024-04-05'),
+(4, 7, '2024-04-05'), 
+(4, 8, '2024-04-05'),
+(4, 9, '2024-04-05'), 
+(4, 10, '2024-04-05'),
 
-  -- League 5: Winter Classic (max_teams = 4)
-  (5,  1, '2024-04-05'), (5,  2, '2024-04-05'),
-  (5,  3, '2024-04-05'), (5,  4, '2024-04-05'),
+-- League 5: Winter Classic (max_teams = 4)
+(5, 1, '2024-04-05'), 
+(5, 2, '2024-04-05'),
+(5, 3, '2024-04-05'), 
+(5, 4, '2024-04-05'),
 
-  -- League 6: Charity Open (max_teams = 5)
-  (6,  1, '2024-04-05'), (6,  2, '2024-04-05'),
-  (6,  3, '2024-04-05'), (6,  4, '2024-04-05'),
-  (6,  5, '2024-04-05'),
+-- League 6: Charity Open (max_teams = 5)
+(6, 1, '2024-04-05'), 
+(6, 2, '2024-04-05'),
+(6, 3, '2024-04-05'), 
+(6, 4, '2024-04-05'),
+(6, 5, '2024-04-05'),
 
-  -- League 7: Corporate Challenge (max_teams = 6)
-  (7,  1, '2024-04-05'), (7,  2, '2024-04-05'),
-  (7,  3, '2024-04-05'), (7,  4, '2024-04-05'),
-  (7,  5, '2024-04-05'), (7,  6, '2024-04-05'),
+-- League 7: Corporate Challenge (max_teams = 6)
+(7, 1, '2024-04-05'), 
+(7, 2, '2024-04-05'),
+(7, 3, '2024-04-05'), 
+(7, 4, '2024-04-05'),
+(7, 5, '2024-04-05'), 
+(7, 6, '2024-04-05'),
 
-  -- League 8: Night Golf (max_teams = 4)
-  (8,  1, '2024-04-05'), (8,  2, '2024-04-05'),
-  (8,  3, '2024-04-05'), (8,  4, '2024-04-05'),
+-- League 8: Night Golf (max_teams = 4)
+(8, 1, '2024-04-05'), 
+(8, 2, '2024-04-05'),
+(8, 3, '2024-04-05'), 
+(8, 4, '2024-04-05'),
 
-  -- League 9: Family Fun (max_teams = 8)
-  (9,  1, '2024-04-05'), (9,  2, '2024-04-05'),
-  (9,  3, '2024-04-05'), (9,  4, '2024-04-05'),
-  (9,  5, '2024-04-05'), (9,  6, '2024-04-05'),
-  (9,  7, '2024-04-05'), (9,  8, '2024-04-05'),
+-- League 9: Family Fun (max_teams = 8)
+(9, 1, '2024-04-05'), 
+(9, 2, '2024-04-05'),
+(9, 3, '2024-04-05'), 
+(9, 4, '2024-04-05'),
+(9, 5, '2024-04-05'), 
+(9, 6, '2024-04-05'),
+(9, 7, '2024-04-05'), 
+(9, 8, '2024-04-05'),
 
-  -- League 10: Junior League (max_teams = 10)
-  (10, 1, '2024-04-05'), (10, 2, '2024-04-05'),
-  (10, 3, '2024-04-05'), (10, 4, '2024-04-05'),
-  (10, 5, '2024-04-05'), (10, 6, '2024-04-05'),
-  (10, 7, '2024-04-05'), (10, 8, '2024-04-05'),
-  (10, 9, '2024-04-05'), (10,10, '2024-04-05'),
+-- League 10: Junior League (max_teams = 10)
+(10, 1, '2024-04-05'), 
+(10, 2, '2024-04-05'),
+(10, 3, '2024-04-05'), 
+(10, 4, '2024-04-05'),
+(10, 5, '2024-04-05'), 
+(10, 6, '2024-04-05'),
+(10, 7, '2024-04-05'), 
+(10, 8, '2024-04-05'),
+(10, 9, '2024-04-05'), 
+(10, 10, '2024-04-05'),
 
-  -- League 11: Senior Cup (max_teams = 6)
-  (11, 1, '2024-04-05'), (11, 2, '2024-04-05'),
-  (11, 3, '2024-04-05'), (11, 4, '2024-04-05'),
-  (11, 5, '2024-04-05'), (11, 6, '2024-04-05')
-;
+-- League 11: Senior Cup (max_teams = 6)
+(11, 1, '2024-04-05'), 
+(11, 2, '2024-04-05'),
+(11, 3, '2024-04-05'), 
+(11, 4, '2024-04-05'),
+(11, 5, '2024-04-05'), 
+(11, 6, '2024-04-05');
 
--- Create a game between the two teams
+-- Create games
 INSERT INTO game (league_id, facility_id, date_time, status, game_type)
 VALUES
 (1, 1, '2023-09-15 18:00:00', 'Completed', 'Regular Season'),
 (2, 2, '2024-04-03 12:30:00', 'Scheduled', 'Regular Season'),
-(1, 1,'2024-03-01 10:00:00','Scheduled','Regular Season'),
-(2, 2,'2024-03-02 11:00:00','Scheduled','Regular Season'),
-(3, 3,'2024-03-03 12:00:00','Scheduled','Elimination'),
-(4, 4,'2024-03-04 13:00:00','Scheduled','Elimination'),
-(5, 5,'2024-03-05 14:00:00','Scheduled','Round Robin'),
-(6, 6,'2024-03-06 15:00:00','Scheduled','Round Robin'),
-(7, 7,'2024-03-07 16:00:00','Scheduled','RR-E'),
-(8, 8,'2024-03-08 17:00:00','Scheduled','RR-E'),
-(9, 9,'2024-03-09 18:00:00','Scheduled','Regular Season'),
-(10,10,'2024-03-10 19:00:00','Scheduled','Regular Season');
+(1, 1, '2024-03-01 10:00:00', 'Scheduled', 'Regular Season'),
+(2, 2, '2024-03-02 11:00:00', 'Scheduled', 'Regular Season'),
+(3, 3, '2024-03-03 12:00:00', 'Scheduled', 'Elimination'),
+(4, 4, '2024-03-04 13:00:00', 'Scheduled', 'Elimination'),
+(5, 5, '2024-03-05 14:00:00', 'Scheduled', 'Round Robin'),
+(6, 6, '2024-03-06 15:00:00', 'Scheduled', 'Round Robin'),
+(7, 7, '2024-03-07 16:00:00', 'Scheduled', 'RR-E'),
+(8, 8, '2024-03-08 17:00:00', 'Scheduled', 'RR-E'),
+(9, 9, '2024-03-09 18:00:00', 'Scheduled', 'Regular Season'),
+(10, 10, '2024-03-10 19:00:00', 'Scheduled', 'Regular Season');
 
--- Record the game results
+-- Record the game results - Only team_ids 1-14 are valid
 INSERT INTO game_team (game_id, team_id, score)
 VALUES
 (1, 1, 42), -- Birdie Bandits score
@@ -239,8 +268,8 @@ VALUES
 (5, 7, 34),
 (6, 8, 35),
 (7, 9, 37),
-(8,10, 33),
-(9,11, 32),
-(10,12,39),
-(11,13,30),
-(12,14,31);
+(8, 10, 33),
+(9, 11, 32),
+(10, 12, 39),
+(11, 13, 30),
+(12, 14, 31);
