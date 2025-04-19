@@ -243,8 +243,66 @@ END CATCH;
 END
 GO
 
+-- -------------------- Use Case 6: Updating League Status --------------------
+CREATE OR ALTER PROCEDURE UpdateLeagueStatus
+    @league_id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
 
--- ----------------------------- Helpful Stored Procedures (No Use Cases) ----------------------------
+    -- 1. Verify league exists
+    IF NOT EXISTS (SELECT 1 FROM league WHERE league_id = @league_id)
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -1;  -- league not found
+    END;
+
+    -- 2. Count joined teams vs. max_teams
+    DECLARE @joinedCount INT, @maxTeams INT;
+    SELECT @joinedCount = COUNT(*) 
+      FROM league_team 
+     WHERE league_id = @league_id;
+
+    SELECT @maxTeams = max_teams
+      FROM league
+     WHERE league_id = @league_id;
+
+    -- 3. If not all teams joined, abort
+    IF @joinedCount < @maxTeams
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN -2;  -- not ready: still waiting on teams
+    END;
+
+    -- 4. Transition to “In Season”
+    UPDATE league
+       SET status = 'In Season'
+     WHERE league_id = @league_id;
+
+    -- 5. Return updated league info + joinedCount
+    SELECT
+        l.league_id,
+        l.name,
+        l.state,
+        l.city,
+        l.zip,
+        l.skill_level,
+        l.status,
+        l.start_date,
+        l.end_date,
+        l.max_teams,
+        @joinedCount AS teams_joined
+    FROM league l
+    WHERE l.league_id = @league_id;
+
+    COMMIT TRANSACTION;
+    RETURN 0;  -- success
+END;
+GO
+
+
+-- ----------------------------- Helpful Stored Procedures (No Use Cases, skip down for next use cases) ----------------------------
 CREATE OR ALTER PROCEDURE GetPlayersWithTeamInfo
     AS
 BEGIN
@@ -313,7 +371,7 @@ ORDER BY
 END
 GO
 
--- --------------------- Use Case: Update Player Handicap -----------------------------
+-- --------------------- Use Case: Update Player Handicap and Update Match Results -----------------------------
 -- DML: select, update
 -- tables: game_team, team_player, player
 CREATE OR ALTER PROCEDURE UpdatePlayerHandicap
